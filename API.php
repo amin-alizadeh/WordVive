@@ -39,6 +39,18 @@ function insertWord($conn, $userID, $word, $translation, $description) {
 	}
 }
 
+function getWordsList($conn, $userID, $first, $last) {
+	$sql = "SELECT Word, Translation, Description, Step FROM Words " .
+			"WHERE UserID = " . $userID . " LIMIT " . $first . ", " . $last;
+	$result = $conn->query($sql);
+	$message = array();
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$message[] = $row;
+		}
+	}
+	return $message;
+}
 
 $message = array();
 if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["username"]) && isset($_POST["password"])) {
@@ -60,10 +72,13 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 			case "userinfo":
 				$message["user"] = getUserInfo($conn, $userID);
 			break;
+			case "wordlist":
+				$message["words"] = getWordsList($conn, $userID, $_GET["first"], $_GET["last"]);
+				break;
 		}
 		
 	} else {
-		$message["status"] = "Invalid";
+		$message["status"] = "Invalid token";
 	}
 }
 echo json_encode($message);

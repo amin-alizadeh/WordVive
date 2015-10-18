@@ -37,8 +37,8 @@ function checkLogin($conn, $username, $password) {
 				$message['token'] = $randomString;
 				$message['status'] = 'OK';
 			} else {
-				$message["token"] = "";
-				$message["status"] = "Error";
+				$message['token'] = "";
+				$message['status'] = "Error";
 			}
 			
 		} else {
@@ -47,7 +47,7 @@ function checkLogin($conn, $username, $password) {
 	} else {
 		$message["status"] = "Invalid";
 	}
-
-	return json_encode($message);
+	
+	return $message;
 }
 ?>
