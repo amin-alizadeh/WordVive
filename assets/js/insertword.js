@@ -1,6 +1,13 @@
-var wordPerPage = 20;
+var wordsPerPage = 20;
+var paginationStart = '<div class="ui right floated pagination menu">';
+var paginationEnd = '</div>';
+var pageJump = '<a class="item" onclick="jumpToPage(%n%)">%n%</a>';
+var previousPage = '<a class="icon item" onclick="previousPage()"><i class="left chevron icon"></i></a>';
+var nextPage = '<a class="icon item" onclick="nextPage()"><i class="right chevron icon"></i></a>';
+var currentPage = 1;
+
 $(document).ready(function() {
-	populateWords(wordPerPage);
+	populateWords(wordsPerPage);
 	$("#insert").click(function () {
 		var word = $("#word").val().trim();
 		var translation = $("#translation").val().trim();
@@ -34,7 +41,7 @@ $(document).ready(function() {
 					}, 1000);
 					$("#insert").addClass("teal");
 				} else {
-					alert ("Something went wrong. Try again later");
+					alert ("Something went wrong! Try again later.");
 				}
 			});
 		}
@@ -42,9 +49,10 @@ $(document).ready(function() {
 	});
 });
 
-function populateWords(wordPerPage) {
+function populateWords(wordsPerPage) {
 	var tbl = document.getElementById("wordlist");
-	for (var i = 0; i < wordPerPage; i++) {
+	/*
+	for (var i = 0; i < wordsPerPage; i++) {
 		var r = tbl.insertRow(i+1);
 		var w = r.insertCell(0);
 		var t = r.insertCell(1);
@@ -52,36 +60,49 @@ function populateWords(wordPerPage) {
 		var s = r.insertCell(3);
 		var ss = r.insertCell(4);
 	}
+	*/
 	$.get("API.php?token=" + token + "&action=wordcount", function (data) {
 		var res = jQuery.parseJSON(data);
 		var wordsCount = res.wordcount;
-		wordsListPagination(0, wordPerPage, wordPerPage);
+		var numberOfPages = (wordsCount / wordsPerPage) + 1;
+		var pageNumbers = (numberOfPages > 1) ? paginationStart + previousPage : "";
+		
+		for (var i = 1; i <= numberOfPages; i++) {
+			pageNumbers += pageJump.replace("%n%", i).replace("%n", i);
+		}
+		pageNumbers += (numberOfPages > 1) ? nextPage + paginationEnd : "";
+		wordsListPagination(0, wordsPerPage);
 	});
 	
 }
 
 
-function wordsListPagination(firstW, lastW, wordPerPage) {	
+function wordsListPagination(firstW, lastW) {	
 	$.get("API.php?token=" + token + "&action=wordlist&first=" + firstW + "&last=" + lastW, function (data) {
 		var res = jQuery.parseJSON(data);
 		var words = res.words;
 		var tbl = document.getElementById("wordlist");
-		var i = 0;
-		var rows = tbl.rows;
-		for (i; i < words.length; i++) {
+		//var i = 0;
+		//Prepare Table
+		var tblLength = tbl.rows.length;
+		for (var i = 1; i < tblLength - 1; i++) {
+			tbl.deleteRow(1);
+		}
+				
+		for (var i = 0; i < words.length; i++) {
 			var word = words[i];
-			
-			var r = rows[i + 1];
-			var c = r.cells;
-			c[0].innerHTML = word.Word;
-			c[1].innerHTML = word.Translation;
-			c[2].innerHTML = word.Description;
-			c[3].innerHTML = word.Step;
-			c[4].innerHTML = "";
+			var r = tbl.insertRow(i + 1);
+			var w = r.insertCell(0);
+			var t = r.insertCell(1);
+			var d = r.insertCell(2);
+			var s = r.insertCell(3);
+			var ss = r.insertCell(4);
+			w.innerHTML = word.Word;
+			t.innerHTML = word.Translation;
+			d.innerHTML = word.Description;
+			s.innerHTML = word.Step;
+			ss.innerHTML = "";
 		}
-		for (i; i < wordPerPage; i++) {
-			console.log(i);
-			//tbl.deleteRow(i);
-		}
+		
 	});
 }
