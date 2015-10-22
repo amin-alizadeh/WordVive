@@ -1,9 +1,9 @@
-var wordsPerPage = 20;
+var wordsPerPage = 2;
 var paginationStart = '<div class="ui right floated pagination menu">';
 var paginationEnd = '</div>';
 var pageJump = '<a class="item" onclick="jumpToPage(%n%)">%n%</a>';
-var previousPage = '<a class="icon item" onclick="previousPage()"><i class="left chevron icon"></i></a>';
-var nextPage = '<a class="icon item" onclick="nextPage()"><i class="right chevron icon"></i></a>';
+var previousPage = '<a class="icon item" onclick="jumpToPreviousPage()"><i class="left chevron icon"></i></a>';
+var nextPage = '<a class="icon item" onclick="jumpToNextPage()"><i class="right chevron icon"></i></a>';
 var currentPage = 1;
 
 $(document).ready(function() {
@@ -64,21 +64,26 @@ function populateWords(wordsPerPage) {
 	$.get("API.php?token=" + token + "&action=wordcount", function (data) {
 		var res = jQuery.parseJSON(data);
 		var wordsCount = res.wordcount;
-		var numberOfPages = (wordsCount / wordsPerPage) + 1;
-		var pageNumbers = (numberOfPages > 1) ? paginationStart + previousPage : "";
-		
-		for (var i = 1; i <= numberOfPages; i++) {
-			pageNumbers += pageJump.replace("%n%", i).replace("%n", i);
+		var numberOfPages = (wordsCount / wordsPerPage);
+		if (numberOfPages > 1) {
+			var pageNumbers = (numberOfPages > 1) ? paginationStart + previousPage : "";
+			
+			for (var i = 1; i <= numberOfPages; i++) {
+				pageNumbers += pageJump.replace("%n%", i).replace("%n%", i);
+			}
+			pageNumbers += (numberOfPages > 1) ? nextPage + paginationEnd : "";
+			$("#pageNavigation").html(pageNumbers);
 		}
-		pageNumbers += (numberOfPages > 1) ? nextPage + paginationEnd : "";
-		wordsListPagination(0, wordsPerPage);
+		jumpToPage(currentPage);
 	});
 	
 }
 
 
 function wordsListPagination(firstW, lastW) {	
+	$("#wordTable").addClass("loading");
 	$.get("API.php?token=" + token + "&action=wordlist&first=" + firstW + "&last=" + lastW, function (data) {
+		$("#wordTable").removeClass("loading");
 		var res = jQuery.parseJSON(data);
 		var words = res.words;
 		var tbl = document.getElementById("wordlist");
@@ -105,4 +110,18 @@ function wordsListPagination(firstW, lastW) {
 		}
 		
 	});
+}
+
+function jumpToPage(n) {
+	currentPage = n;
+	wordsListPagination((n - 1) * wordsPerPage, n * wordsPerPage);
+	console.log(n);
+}
+
+function jumpToNextPage() {
+	jumpToPage(currentPage + 1);
+}
+
+function jumpToPreviousPage() {
+	jumpToPage(currentPage - 1);
 }
