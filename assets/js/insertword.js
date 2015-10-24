@@ -1,13 +1,19 @@
-var wordsPerPage = 2;
+var wordsPerPage = 5;
 var paginationStart = '<div class="ui right floated pagination menu">';
 var paginationEnd = '</div>';
-var pageJump = '<a class="item" onclick="jumpToPage(%n%)">%n%</a>';
+var pageJump = '<a class="item" onclick="jumpToPage(%n%)" id="pgJump%n%">%n%</a>';
 var previousPage = '<a class="icon item" onclick="jumpToPreviousPage()"><i class="left chevron icon"></i></a>';
 var nextPage = '<a class="icon item" onclick="jumpToNextPage()"><i class="right chevron icon"></i></a>';
-var currentPage = 1;
+var currentPage = 0;
+var numberOfPages = 1;
+var wordSettings = '<button class="circular ui tiny teal icon button"><i class="teal edit icon"></i></button>'+
+					'<button class="circular ui tiny red icon button"><i class="red remove icon"></i></button>';
+var wordSettings = '<i onclick="editWord(%n%)" class="teal edit icon"></i>'+
+					'<i onclick="deleteWord(%n%)" class="red remove icon"></i>';
+//var wordsList = [];
 
 $(document).ready(function() {
-	populateWords(wordsPerPage);
+	populateWords(wordsPerPage, 1);
 	$("#insert").click(function () {
 		var word = $("#word").val().trim();
 		var translation = $("#translation").val().trim();
@@ -40,6 +46,24 @@ $(document).ready(function() {
 						$("#insert").addClass("teal");
 					}, 1000);
 					$("#insert").addClass("teal");
+					if (currentPage == 1) {
+						/*var tbl = document.getElementById("wordlist");
+						tbl.deleteRow(tbl.rows.length - 2);
+						var r = tbl.insertRow(1);
+						var w = r.insertCell(0);
+						var t = r.insertCell(1);
+						var d = r.insertCell(2);
+						var s = r.insertCell(3);
+						var ss = r.insertCell(4);
+						w.innerHTML = word;
+						t.innerHTML = translation;
+						d.innerHTML = description;
+						s.innerHTML = "1";
+						ss.innerHTML = wordSettings;*/
+						populateWords(wordsPerPage, 1);
+					} else {
+						populateWords(wordsPerPage, 1);
+					}
 				} else {
 					alert ("Something went wrong! Try again later.");
 				}
@@ -49,32 +73,26 @@ $(document).ready(function() {
 	});
 });
 
-function populateWords(wordsPerPage) {
+function populateWords(wordsPerPage, jump) {
 	var tbl = document.getElementById("wordlist");
-	/*
-	for (var i = 0; i < wordsPerPage; i++) {
-		var r = tbl.insertRow(i+1);
-		var w = r.insertCell(0);
-		var t = r.insertCell(1);
-		var d = r.insertCell(2);
-		var s = r.insertCell(3);
-		var ss = r.insertCell(4);
-	}
-	*/
+	$("#wordTable").addClass("loading");
 	$.get("API.php?token=" + token + "&action=wordcount", function (data) {
+		$("#wordTable").removeClass("loading");
 		var res = jQuery.parseJSON(data);
 		var wordsCount = res.wordcount;
-		var numberOfPages = (wordsCount / wordsPerPage);
+		numberOfPages = Math.ceil(wordsCount / wordsPerPage);
 		if (numberOfPages > 1) {
 			var pageNumbers = (numberOfPages > 1) ? paginationStart + previousPage : "";
 			
 			for (var i = 1; i <= numberOfPages; i++) {
-				pageNumbers += pageJump.replace("%n%", i).replace("%n%", i);
+				pageNumbers += pageJump.replace("%n%", i).replace("%n%", i).replace("%n%", i);
 			}
 			pageNumbers += (numberOfPages > 1) ? nextPage + paginationEnd : "";
 			$("#pageNavigation").html(pageNumbers);
 		}
-		jumpToPage(currentPage);
+		if (jump > 0) {
+			jumpToPage(jump);
+		}
 	});
 	
 }
@@ -106,16 +124,20 @@ function wordsListPagination(firstW, lastW) {
 			t.innerHTML = word.Translation;
 			d.innerHTML = word.Description;
 			s.innerHTML = word.Step;
-			ss.innerHTML = "";
+			ss.innerHTML = wordSettings.replace("%n%", word.ID).replace("%n%", word.ID);
+			ss.className = "right aligned";
 		}
 		
 	});
 }
 
 function jumpToPage(n) {
-	currentPage = n;
-	wordsListPagination((n - 1) * wordsPerPage, n * wordsPerPage);
-	console.log(n);
+	if (n > 0 && n <= numberOfPages) {
+		if (currentPage > 0) $("#pgJump" + currentPage).removeClass("disabled");
+		currentPage = n;
+		$("#pgJump" + currentPage).addClass("disabled");
+		wordsListPagination((n - 1) * wordsPerPage, n * wordsPerPage);
+	}
 }
 
 function jumpToNextPage() {
@@ -124,4 +146,12 @@ function jumpToNextPage() {
 
 function jumpToPreviousPage() {
 	jumpToPage(currentPage - 1);
+}
+
+function editWord(id) {
+	console.log("Edit word " + id);
+}
+
+function deleteWord(id) {
+	console.log("Delete word " + id);
 }

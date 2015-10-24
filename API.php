@@ -40,7 +40,7 @@ function insertWord($conn, $userID, $word, $translation, $description) {
 }
 
 function getWordsList($conn, $userID, $first, $last) {
-	$sql = "SELECT Word, Translation, Description, Step FROM Words " .
+	$sql = "SELECT ID, Word, Translation, Description, Step FROM Words " .
 			"WHERE UserID = " . $userID . " ORDER BY InsertTime DESC LIMIT " . $first . ", " . ($last - $first);
 	$result = $conn->query($sql);
 	$message = array();
