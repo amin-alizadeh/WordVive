@@ -6,6 +6,7 @@ if (localStorage.hasOwnProperty("token")) {
 }
 
 var menu = '<a href="#" class="item"><i class="home icon"></i>Home</a>' +
+			'<a href="testwords.html" class="item"><i class="student icon"></i>Test</a>' +
 			'<div class="right menu">' +
 				'<a href="#" class="ui simple dropdown item">' +
 					'<div id="username">Hello User!</div> <i class="dropdown icon"></i>' +
