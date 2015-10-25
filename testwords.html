@@ -61,7 +61,7 @@
 
     <div class="ui main text container">
 		
-		<div class="ui grid">	
+		<div class="ui grid" id="startPractice" style="display:block">	
 			<div class="two column row">
 				<div class="six wide column">
 					<div class="field">
@@ -69,7 +69,9 @@
 							<a class="ui label" onclick="decreaseWordNumber()">-</a>
 							<input id="wordnumber" onchange="checkWordNumber()" type="number" style="text-align:center;" placeholder="Amount" value="20">
 							<a class="ui label" onclick="increaseWordNumber()">+</a>
+							
 						</div>
+						<div class="ui pointing blue label">Words to practice</div>
 					</div>
 				</div>
 				<div class="ten right aligned wide column">
@@ -78,14 +80,56 @@
 			</div>
 		</div>
 		
+		<div class="ui grid" id="practiceResult" style="display:none">	
+			<div class="two column row">
+				<div class="six wide column">
+					<table class="ui very basic table">
+						<tbody>
+							<tr>
+								<td>Correct</td>
+								<td id="correctInventory"></td>
+							</tr>
+							<tr>
+								<td>Incorrect</td>
+								<td id="incorrectInventory"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="ten right aligned wide column">
+					<button class="ui teal submit button" id="submitPractice" onclick="submitPracticeResult()">Submit</button>
+				</div>
+			</div>
+		</div>
+		
     </div>
 	
-<div class="ui fullscreen modal">
-	<div class="header">Header</div>
-	<div class="image content">
-		<img class="image">
+<div class="ui small modal">
+	<i class="close icon"></i>
+	<div class="header" id="modalHeader">
+		
+	</div>
+	<div class="content">
 		<div class="description">
-			<p></p>
+		
+			<div class="ui header" id="wordMain"></div>
+			<p id="wordTranslation"></p>
+			<p id="wordDescription"></p>
+		</div>
+		
+	</div>
+	<div class="actions">
+		<div class="ui black right labeled icon button" onclick="incorrectWord()">
+			I don't know
+			<i class="minus circle icon"></i>
+		</div>
+		<div class="ui blue right labeled icon button" onclick="checkWord()">
+			Check
+			<i class="unhide icon"></i>
+		</div>
+		<div class="ui green right labeled icon button" onclick="correctWord()">
+			I know
+			<i class="checkmark icon"></i>
 		</div>
 	</div>
 </div>	

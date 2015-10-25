@@ -35,6 +35,14 @@ $(document).ready(function() {
 	});
 	
 	$("#signout").click(function(){
-		console.log("signout");
+		$.get("API.php?token=" + token + "&action=logout", function (data) {
+			var res = jQuery.parseJSON(data);
+			if (res.status == "OK" && res.logout) {
+				localStorage.removeItem("token");
+				window.location.href = "login.html";
+			} else {
+				alert ("Something went wrong! Please try again later.");
+			}
+		});
 	});
 });

@@ -64,6 +64,41 @@ function getWordsCount($conn, $userID) {
 	return $message;
 }
 
+function logUserOut($conn, $token) {
+	$sql = "UPDATE SessionToken SET IsValid=0 WHERE Token='". $token ."'";
+	if ($conn->query($sql) === TRUE) {
+		return true;
+	} else { 
+		return false;
+	}
+}
+
+function getPracticeList($conn, $userID, $n) {
+	$sql = "SELECT rndW.ID, Word, Translation, Description, Step FROM Words w "
+    . "INNER JOIN ("
+    . "SELECT ID FROM Words WHERE UserID=". $userID ." ORDER BY RAND() LIMIT 0, " . $n
+    . ") AS rndW ON rndW.ID = w.ID";
+	
+	$result = $conn->query($sql);
+	$message = array();
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$message[] = $row;
+		}
+	}
+	return $message;
+	
+}
+
+function submitPractice($conn, $userID, $cr, $incr) {
+	$sqlcr = "UPDATE Words SET Step = Step + 1 WHERE UserID=". $userID ." AND ID IN (". $cr .")";
+	$sqlincr = "UPDATE Words SET Step = 1 WHERE UserID=". $userID ." AND ID IN (". $incr .")";
+	if ($conn->query($sqlcr) === TRUE && $conn->query($sqlincr) === TRUE) {
+		return true;
+	} else { 
+		return false;
+	}
+}
 
 $message = array();
 if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["username"]) && isset($_POST["password"])) {
@@ -90,6 +125,24 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				break;
 			case "wordcount":
 				$message["wordcount"] = getWordsCount($conn, $userID);
+				break;
+			case "logout":
+				$message["logout"] = logUserOut($conn, $_GET["token"]);
+			case "practicelist":
+				if (isset($_GET["count"])) {
+					$message["practicelist"] = getPracticeList($conn, $userID, $_GET["count"]);
+				} else {
+					$message["practicelist"] = getPracticeList($conn, $userID, 10);
+				}
+				break;
+			case "submitpractice":
+				if(isset($_POST["correct"]) && isset($_POST["incorrect"])) {
+					$cr = $_POST["correct"];
+					$incr = $_POST["incorrect"];
+					$message["submit"] = submitPractice($conn, $userID, $cr, $incr);
+				} else {
+					$message["submit"] = false;
+				}
 				break;
 		}
 		
