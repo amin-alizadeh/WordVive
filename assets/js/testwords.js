@@ -3,8 +3,11 @@ var wordMainDiv = '<i class="book icon"></i>';
 var wordTranslationDiv = '<i class="translate icon"></i>';
 var wordDescriptionDiv = '<i class="file text outline icon"></i>';
 
-if (localStorage.hasOwnProperty("practicelist")) {
+if (localStorage.hasOwnProperty("practicelist") && localStorage.hasOwnProperty("practicelistInventory")) {
 	practiceList = jQuery.parseJSON(localStorage.practicelist);
+	$('#unfinishedPractice').css('display', 'block');
+} else {
+	$('#unfinishedPractice').css('display', 'none');
 }
 
 function decreaseWordNumber() {
@@ -123,9 +126,11 @@ function showWordModal(n) {
 	$('#wordTranslation').html('<i class="translate icon"></i>' + w.Translation).css('visibility', 'hidden');
 	$('#wordDescription').html('<i class="file text outline icon"></i>' + w.Description).css('visibility', 'hidden');
 	if (! $('.ui.small.modal').modal('is active')) $('.ui.small.modal').modal('show');
+	$('#unfinishedPractice').css('display', 'block');
 }
 
 function finishPractice() {
+	$('#unfinishedPractice').css('display', 'none');
 	$('#startPractice').css('display', 'none');
 	$('#practiceResult').css('display', 'block');
 	var pr = jQuery.parseJSON(localStorage.practicelistInventory);
@@ -160,11 +165,15 @@ function submitPracticeResult() {
 		if (res.submit) {
 			localStorage.removeItem("practicelist");
 			localStorage.removeItem("practicelistInventory");
-			window.location.href = 'insertword.html';
+			location.reload();
 		} else {
 			alert("Something went wrong! Please try again later.")
 		}
 	});
 	
 	
+}
+
+function continuePractice() {
+	showWordModal (getCurrentWordIndex());
 }
