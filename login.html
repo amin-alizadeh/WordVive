@@ -48,9 +48,16 @@
       max-width: 450px;
     }
   </style>
-  <script>
-  
-  $(document)
+<script>
+	if (localStorage.hasOwnProperty("token")) {
+		$.get("API.php?action=userinfo&token=" + localStorage.token, function (data) {
+			var res = jQuery.parseJSON(data);
+			if (res.status == "OK") {
+				window.location.href = "insertword.html";
+			}
+		});
+	}
+	$(document)
     .ready(function() {
 	
       $('.ui.form')
