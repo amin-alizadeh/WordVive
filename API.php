@@ -93,11 +93,27 @@ function getPracticeList($conn, $userID, $n) {
 function submitPractice($conn, $userID, $cr, $incr) {
 	$sqlcr = "UPDATE Words SET Step = Step + 1 WHERE UserID=". $userID ." AND ID IN (". $cr .")";
 	$sqlincr = "UPDATE Words SET Step = 1 WHERE UserID=". $userID ." AND ID IN (". $incr .")";
-	if ($conn->query($sqlcr) === TRUE && $conn->query($sqlincr) === TRUE) {
-		return true;
-	} else { 
-		return false;
+	$crres = false;
+	$incrres = false;
+	
+	if (strlen($cr) > 0) {
+		if ($conn->query($sqlcr) === TRUE) {
+			$crres = true;
+		}
+	} else {
+		$crres = true;
 	}
+	
+	if (strlen($incr) > 0) {
+		if ($conn->query($sqlincr) === TRUE) {
+			$incrres = true;
+		}
+	} else {
+		$incrres = true;
+	}
+	
+	return ($crres and $incrres);
+	
 }
 
 $message = array();
