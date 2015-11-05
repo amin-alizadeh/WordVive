@@ -38,6 +38,15 @@ function insertWord($conn, $userID, $word, $translation, $description) {
 		return "Error";
 	}
 }
+function updateWord($conn, $userID, $id, $word, $translation, $description) {
+	$sql = "UPDATE `Words` SET `Word`=". $word .",`Translation`=". $translation .",`Description`=". $description .
+		" WHERE `ID`=". $id ." AND `UserID`=". $userID;
+	if ($conn->query($sql) === TRUE) {
+		return "OK";
+	} else { 
+		return "Error";
+	}
+}
 
 function getWordsList($conn, $userID, $first, $last) {
 	$sql = "SELECT ID, Word, Translation, Description, Step FROM Words " .
@@ -159,6 +168,13 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				} else {
 					$message["submit"] = false;
 				}
+				break;
+			case "updateword":
+				$wid = isset($_POST["id"]) ? $_POST["id"] : "";
+				$word = isset($_POST["word"]) ? $_POST["word"] : "";
+				$translation = isset($_POST["translation"]) ? $_POST["translation"] : "";
+				$description = isset($_POST["description"]) ? $_POST["description"] : "";
+				$message["status"] = updateWord($conn, $userID, $id, $word, $translation, $description);
 				break;
 		}
 		

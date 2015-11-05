@@ -62,50 +62,50 @@
 		
         <h1 class="ui header">Insert a word</h1>
         <p>Insert a word with its translation. If needed, you can add extra descriptions for the word.</p>
-		
-			<div class="ui two column stackable grid">	
-				<div class="one column row">
-					<div class="eight wide column">
-						<div class="field">
-							<div id="wordfield" class="ui fluid left icon corner labeled input">
-								<i class="book icon"></i>
-								<input type="text" id="word" placeholder="Word">
-								<div class="ui corner label">
-									<i class="asterisk icon"></i>
-								</div>
+	
+		<div class="ui two column stackable grid">	
+			<div class="one column row">
+				<div class="eight wide column">
+					<div class="field">
+						<div id="wordfield" class="ui fluid left icon corner labeled input">
+							<i class="book icon"></i>
+							<input type="text" id="word" placeholder="Word">
+							<div class="ui corner label">
+								<i class="asterisk icon"></i>
 							</div>
 						</div>
 					</div>
 				</div>
-				<div class="one column row">
-					<div class="ten wide column">
-						<div class="field">
-							<div id="translationfield" class="ui fluid left icon corner labeled input">
-								<i class="translate icon"></i>
-								<input type="text" id="translation" placeholder="Translation">
-								<div class="ui corner label">
-									<i class="asterisk icon"></i>
-								</div>
-							</div>
-						</div>
-					</div>
-					
-				</div>
-				<div class="two column row">
-					<div class="ten wide column">
-						<div class="field">
-							<div class="ui fluid left icon input">
-								<i class="file text outline icon"></i>
-								<input type="text" id="description" placeholder="Description">
-							</div>
-						</div>
-					</div>
-					<div class="six wide column">
-						<button class="ui teal submit button" id="insert">Insert</button>
-					</div>
-				</div>
-			
 			</div>
+			<div class="one column row">
+				<div class="ten wide column">
+					<div class="field">
+						<div id="translationfield" class="ui fluid left icon corner labeled input">
+							<i class="translate icon"></i>
+							<input type="text" id="translation" placeholder="Translation">
+							<div class="ui corner label">
+								<i class="asterisk icon"></i>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+			</div>
+			<div class="two column row">
+				<div class="ten wide column">
+					<div class="field">
+						<div class="ui fluid left icon input">
+							<i class="file text outline icon"></i>
+							<input type="text" id="description" placeholder="Description">
+						</div>
+					</div>
+				</div>
+				<div class="six wide column">
+					<button class="ui teal submit button" id="insert">Insert</button>
+				</div>
+			</div>
+		
+		</div>
     </div>
 
 	<h4 class="ui horizontal divider header">
@@ -144,6 +144,77 @@
     </div>
 	</div>
 	
+	<div class="ui small modal">
+		<i class="close icon"></i>
+		<div class="header" id="modalHeader">
+			
+		</div>
+		<div class="content">
+			<div class="description">
+			
+				<div class="ui form" id="modalDescription">
+					<div class="ui two column stackable grid">	
+						<div class="one column row">
+							<div class="eight wide column">
+								<div class="field">
+									<div id="wordfield" class="ui fluid left icon corner labeled input">
+										<i class="book icon"></i>
+										<input type="text" id="editword" placeholder="Word">
+										<div class="ui corner label">
+											<i class="asterisk icon"></i>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="one column row">
+							<div class="ten wide column">
+								<div class="field">
+									<div id="translationfield" class="ui fluid left icon corner labeled input">
+										<i class="translate icon"></i>
+										<input type="text" id="edittranslation" placeholder="Translation">
+										<div class="ui corner label">
+											<i class="asterisk icon"></i>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+						</div>
+						<div class="two column row">
+							<div class="ten wide column">
+								<div class="field">
+									<div class="ui fluid left icon input">
+										<i class="file text outline icon"></i>
+										<input type="text" id="editdescription" placeholder="Description">
+									</div>
+								</div>
+							</div>
+							<div class="six wide column">
+								
+							</div>
+						</div>
+					
+					</div>
+				</div>
+			
+			</div>
+			
+		</div>
+		<div class="actions">
+			<div class="ui black right labeled icon button" id="cancelEditWord" onclick="cancelEdit()">
+				Cancel
+				<i class="minus circle icon"></i>
+			</div>
+			
+			<div class="ui green right labeled icon button" id="submitEditWord" onclick="submitEdit()">
+				OK
+				<i class="checkmark icon"></i>
+			</div>
+		</div>
+	</div>	
+		
+
 	
     <div class="ui inverted vertical footer segment">
         <div class="ui center aligned container">

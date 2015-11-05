@@ -10,9 +10,11 @@ var wordSettings = '<button class="circular ui tiny teal icon button"><i class="
 					'<button class="circular ui tiny red icon button"><i class="red remove icon"></i></button>';
 var wordSettings = '<i onclick="editWord(%n%)" class="teal edit icon"></i>'+
 					'<i onclick="deleteWord(%n%)" class="red remove icon"></i>';
-//var wordsList = [];
+var wordsList = [];
+var wordEditID = -1;
 
 $(document).ready(function() {
+	$('.ui.small.modal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
 	populateWords(wordsPerPage, 1);
 	$("#insert").click(function () {
 		var word = $("#word").val().trim();
@@ -78,7 +80,7 @@ function populateWords(wordsPerPage, jump) {
 	$("#wordTable").addClass("loading");
 	$.get("API.php?token=" + token + "&action=wordcount", function (data) {
 		$("#wordTable").removeClass("loading");
-		var res = jQuery.parseJSON(data);
+		res = jQuery.parseJSON(data);
 		var wordsCount = res.wordcount;
 		numberOfPages = Math.ceil(wordsCount / wordsPerPage);
 		if (numberOfPages > 1) {
@@ -103,7 +105,7 @@ function wordsListPagination(firstW, lastW) {
 	$.get("API.php?token=" + token + "&action=wordlist&first=" + firstW + "&last=" + lastW, function (data) {
 		$("#wordTable").removeClass("loading");
 		var res = jQuery.parseJSON(data);
-		var words = res.words;
+		wordsList = res.words;
 		var tbl = document.getElementById("wordlist");
 		//var i = 0;
 		//Prepare Table
@@ -112,8 +114,8 @@ function wordsListPagination(firstW, lastW) {
 			tbl.deleteRow(1);
 		}
 				
-		for (var i = 0; i < words.length; i++) {
-			var word = words[i];
+		for (var i = 0; i < wordsList.length; i++) {
+			var word = wordsList[i];
 			var r = tbl.insertRow(i + 1);
 			var w = r.insertCell(0);
 			var t = r.insertCell(1);
@@ -124,7 +126,7 @@ function wordsListPagination(firstW, lastW) {
 			t.innerHTML = word.Translation;
 			d.innerHTML = word.Description;
 			s.innerHTML = word.Step;
-			ss.innerHTML = wordSettings.replace("%n%", word.ID).replace("%n%", word.ID);
+			ss.innerHTML = wordSettings.replace("%n%", i).replace("%n%", i);
 			ss.className = "right aligned";
 		}
 		
@@ -149,9 +151,34 @@ function jumpToPreviousPage() {
 }
 
 function editWord(id) {
-	console.log("Edit word " + id);
+	if (! $('.ui.small.modal').modal('is active')) $('.ui.small.modal').modal('show');
+	$('#editword').val(wordsList[id].Word);
+	$('#edittranslation').val(wordsList[id].Translation);
+	$('#editdescription').val(wordsList[id].Description);
+	wordEditID = id;
 }
 
 function deleteWord(id) {
 	console.log("Delete word " + id);
+}
+
+function submitEdit() {
+	$("#modalDescription").addClass("loading");
+	$("#submitEditWord").addClass("loading");
+	$("#cancelEditWord").addClass("loading");
+	$.post("API.php?token=" + token + "&action=insert", {word:$('#editword').val(), id:wordsList[wordEditID].ID, 
+	translation:$('#edittranslation').val(), description:$('#editdescription').val()}, function (data) {
+		$("#modalDescription").removeClass("loading");
+		$("#submitEditWord").removeClass("loading");
+		$("#cancelEditWord").removeClass("loading");
+		$('.ui.small.modal').modal('hide');
+		var res = jQuery.parseJSON(data);
+		if (res.status == "OK") {
+			console.log("OK");
+		}
+	});
+}
+
+function cancelEdit() {
+
 }

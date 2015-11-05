@@ -121,7 +121,7 @@ function getCurrentWordIndex() {
 function showWordModal(n) {
 	var w = getWordInfo(n);
 	$('#modalHeader').html('<i class="book icon"></i> ' + (n+1) + ' <i class="checkered flag icon"></i> ' + w.Step);
-	$('#modalHeader').transition('pulse');
+	//$('#modalHeader').transition('pulse');
 	$('#wordMain').html('<i class="book icon"></i>' + w.Word);
 	$('#wordTranslation').html('<i class="translate icon"></i>' + w.Translation).css('visibility', 'hidden');
 	$('#wordDescription').html('<i class="file text outline icon"></i>' + w.Description).css('visibility', 'hidden');
