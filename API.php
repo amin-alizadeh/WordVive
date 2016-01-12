@@ -153,6 +153,10 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				break;
 			case "logout":
 				$message["logout"] = logUserOut($conn, $_GET["token"]);
+				// remove all session variables
+				session_unset(); 
+				// destroy the session 
+				session_destroy(); 
 			case "practicelist":
 				if (isset($_GET["count"])) {
 					$message["practicelist"] = getPracticeList($conn, $userID, $_GET["count"]);
@@ -183,4 +187,5 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 	}
 }
 echo json_encode($message);
+mysqli_close($conn);
 ?>
