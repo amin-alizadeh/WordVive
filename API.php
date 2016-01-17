@@ -3,27 +3,49 @@ date_default_timezone_set('Europe/Helsinki');
 require_once ('connect.php');
 require_once ('login.php');
 function getUserFromToken($conn, $token) {
-	$userID = null;
-	$sql = "SELECT `UserID`, `ValidUntil`, `IsValid` FROM `SessionToken` WHERE Token='" . $token . "'";
-	$result = $conn->query($sql);
+	$uID = null;
+	$sql = "SELECT UserID, ValidUntil, IsValid FROM SessionToken WHERE Token=?";
+	if (!($stmt = mysqli_prepare($conn, $sql))) {
+		echo "Could not prepare the statement";
+	}
+	if (!$stmt->bind_param('s', $token)) {
+		throw new \Exception("Database error: $stmt->errno - $stmt->error");
+	}
 
-	if ($result->num_rows > 0) {
-		$row = $result->fetch_assoc();
-		
-		if($row["IsValid"] == 1) {
-			$userID = $row["UserID"];
+	mysqli_stmt_execute($stmt);
+	mysqli_stmt_bind_result($stmt, $userID, $validUntil, $isValid);
+	$stmt->store_result();
+	$num_result = $stmt->num_rows;
+	
+	if ($num_result > 0) {
+		mysqli_stmt_fetch($stmt);
+		if ($isValid == 1) {
+			$uID = $userID;
 		}
 	}
 
 	return $userID;
 }
-function getUserInfo($conn, $userID) {
-	$sql = "SELECT `NickName` FROM `UserInfo` WHERE ID=". $userID;
-	$result = $conn->query($sql);
 
-	if ($result->num_rows > 0) {
-		$row = $result->fetch_assoc();
-		return $row["NickName"];
+function getUserInfo($conn, $userID) {
+	$sql = "SELECT NickName FROM UserInfo WHERE ID=?";//. $userID;
+	if (!($stmt = mysqli_prepare($conn, $sql))) {
+		echo "Could not prepare the statement";
+	}
+	if (!$stmt->bind_param('i', $userID)) {
+		throw new \Exception("Database error: $stmt->errno - $stmt->error");
+	}
+
+	mysqli_stmt_execute($stmt);
+	mysqli_stmt_bind_result($stmt, $nickName);
+	$stmt->store_result();
+	$num_result = $stmt->num_rows;
+	
+	//$result = $conn->query($sql);
+
+	if ($num_result > 0) {
+		mysqli_stmt_fetch($stmt);
+		return $nickName;
 	} else {
 		return "";
 	}
@@ -125,9 +147,61 @@ function submitPractice($conn, $userID, $cr, $incr) {
 	
 }
 
+function registerNewUser($conn, $username, $password, $firstname, $lastname, $email, $terms) {
+	$message = array();
+	$sql = 'SELECT (SELECT COUNT(username) FROM UserInfo WHERE username=?) AS usernameExist'.
+			', (SELECT COUNT(email) FROM UserInfo WHERE email=?) AS emailExist';
+	
+	if (!($stmt = mysqli_prepare($conn, $sql))) {
+		echo "Could not prepare the statement";
+	}
+	if (!$stmt->bind_param('ss', $username, $email)) {
+		throw new \Exception("Database error: $stmt->errno - $stmt->error");
+	}
+
+	mysqli_stmt_execute($stmt);
+	mysqli_stmt_bind_result($stmt, $usernameExist, $emailExist);
+	$stmt->store_result();
+	$num_result = $stmt->num_rows;
+	mysqli_stmt_fetch($stmt);
+	
+	if($usernameExist > 0 && emailExist > 0) {
+		$message["status"] = "Fail";
+		$message["message"] = "Username and Email already exist";
+	} else if($usernameExist > 0 && emailExist == 0) {
+		$message["status"] = "Fail";
+		$message["message"] = "Username already exist";
+	} else if($usernameExist == 0 && emailExist > 0) {
+		$message["status"] = "Fail";
+		$message["message"] = "Email already exist";
+	} else {
+		
+		
+		$sql = "INSERT INTO UserInfo(username, password, email, FirstName, LastName) VALUES (?,?,?,?,?)";
+		$user_stmt =  $conn->prepare($sql);
+		$user_stmt->bind_param("sssss", $username, $password, $email, $firstname, $lastname);
+		if ($user_stmt->execute()) {
+			$message['status'] = 'OK';
+			
+		} else {
+			$message["status"] = "Fail";
+			$message["message"] = "Server error. Try again later.";
+		}
+		mysqli_stmt_close($user_stmt);
+		mysqli_stmt_close($stmt);
+	}
+
+	return $message;
+}
+
 $message = array();
 if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["username"]) && isset($_POST["password"])) {
 	$message = checkLogin ($conn, $_POST["username"], $_POST["password"]);
+	
+} else if (isset($_GET["action"]) && $_GET["action"] == "register" && isset($_POST["username"]) && isset($_POST["password"]) && isset($_POST["firstname"]) && isset($_POST["lastname"]) && isset($_POST["email"]) && isset($_POST["terms"])) {
+	
+	$message = registerNewUser($conn, $_POST["username"], $_POST["password"], $_POST["firstname"], $_POST["lastname"], $_POST["email"], $_POST["terms"]);
+	
 } else if (isset($_GET["token"]) && isset($_GET["action"])) {
 	$userID = getUserFromToken($conn, $_GET["token"]);
 	if ( $userID != null) {

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Standard Meta -->
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+  <!-- Site Properities -->
+  <title>Register Vocabulize</title>
+<!--
+  <link rel="stylesheet" type="text/css" href="dist/components/reset.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/reset.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/site.css">
+
+  <link rel="stylesheet" type="text/css" href="dist/components/container.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/grid.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/header.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/image.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/menu.css">
+
+  <link rel="stylesheet" type="text/css" href="dist/components/divider.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/segment.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/form.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/input.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/button.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/list.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/message.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/icon.css">
+-->
+	<link rel="stylesheet" type="text/css" href="dist/semantic.css">
+	<script src="assets/library/jquery.min.js"></script>
+	<script src="dist/components/form.js"></script>
+	<script src="dist/components/transition.js"></script>
+	<script src="assets/library/md5.js"></script><!--from: https://github.com/blueimp/JavaScript-MD5-->
+
+  <style type="text/css">
+    body {
+      background-color: #DADADA;
+    }
+    body > .grid {
+      height: 100%;
+    }
+    .image {
+      margin-top: -100px;
+    }
+    .column {
+      max-width: 450px;
+    }
+  </style>
+<script>
+	if (localStorage.hasOwnProperty("token")) {
+		$.get("API.php?action=userinfo&token=" + localStorage.token, function (data) {
+			var res = jQuery.parseJSON(data);
+			if (res.status == "OK") {
+				window.location.href = "insertword.html";
+			}
+		});
+	}
+	$(document)
+    .ready(function() {
+	
+		$('.ui.form')
+		  .form({
+			on: 'blur',
+			fields: {
+			  firstname: {
+				identifier  : 'firstname',
+				rules: [
+				  {
+					type   : 'minLength[2]',
+					prompt : 'First name is oo short'
+				  },
+				  {
+					type   : 'maxLength[16]',
+					prompt : 'First name must be maximum 16 characters'
+				  }
+				]
+			  },
+			  lastname: {
+				identifier  : 'lastname',
+				rules: [
+				  {
+					type   : 'minLength[2]',
+					prompt : 'Last name is too short'
+				  },
+				  {
+					type   : 'maxLength[16]',
+					prompt : 'Last name must be maximum 16 characters'
+				  }
+				]
+			  },
+			  username: {
+				identifier  : 'username',
+				rules: [
+				  {
+					type   : 'regExp[/^[a-z0-9_-]{4,16}$/]',
+					prompt : 'Please enter a 4-16 letter username'
+				  }
+				]
+			  },
+			  email: {
+				identifier  : 'email',
+				rules: [
+				  {
+					type   : 'email',
+					prompt : 'Please enter a valid e-mail'
+				  }
+				]
+			  },
+			  password: {
+				identifier  : 'password',
+				rules: [
+				  {
+					type   : 'minLength[6]',
+					prompt : 'Password must be 6-16 characters long'
+				  },
+				  {
+					type   : 'maxLength[16]',
+					prompt : 'Password must be 6-16 characters long'
+				  }
+				]
+			  },
+			  repassword: {
+				identifier  : 'repassword',
+				rules: [
+				  {
+					type   : 'minLength[6]',
+					prompt : 'Password must be 6-16 characters long'
+				  },
+				  {
+					type   : 'maxLength[16]',
+					prompt : 'Password must be 6-16 characters long'
+				  },
+				  {
+					type   : 'match[password]',
+					prompt : 'Passwords do not match'
+				  }
+				]
+			  },
+			  terms: {
+				identifier: 'terms',
+				rules: [
+				  {
+					type   : 'checked',
+					prompt : 'You must agree to the terms and conditions'
+				  }
+				]
+			  }
+			}
+		  })
+		;      
+	  
+	  
+    })
+  ;
+  </script>
+</head>
+<body>
+<div class="ui center aligned grid">
+	<div class="left aligned column">
+		<h2 class="ui teal image header">
+		<p/>
+			<div class="content">
+				Create your account
+			</div>
+		</h2>
+		
+		
+		<div class="ui large form">
+			<div class="two fields">
+				<div class="field">
+					<input name="firstname" type="text" placeholder="First name" maxlength="20">
+				</div>
+				<div class="field">
+					<input name="lastname" type="text" placeholder="Last name" maxlength="20">
+				</div>
+			</div>
+			<div class="two fields">
+				<div class="field">
+					<input name="username" type="text" placeholder="User name" maxlength="20">
+				</div>
+				<div class="field">
+					<input name="email" type="text" placeholder="Email" maxlength="50">
+				</div>
+			</div>
+			<div class="two fields">
+				<div class="field">
+					<input name="password" type="password" placeholder="Password" maxlength="20">
+				</div>
+				<div class="field">
+					<input name="repassword" type="password" placeholder="Confirm Password" maxlength="20">
+				</div>
+			</div>
+			<div class="inline field">
+				<div class="ui checkbox">
+					<input type="checkbox" name="terms">
+					<label>I agree to the <a href="tnc.html">Terms and Conditions</a></label>
+				</div>
+			</div>
+			<button class="ui teal fluid submit button" id="submit">Submit</button>
+			<div class="ui error message"></div>
+		</div>
+
+
+	</div>
+</div>
+
+</body>
+<script>
+var res = "";
+$("#submit").click(function(){
+	if($('.ui.form').form('is valid')){
+		var username = $('input[name=username]').val();
+		var password = $('input[name=password]').val();
+		var firstname = $('input[name=firstname]').val();
+		var lastname = $('input[name=lastname]').val();
+		var email = $('input[name=email]').val();
+		var terms = $('input[name=terms]').prop('checked');
+		
+		if (username.length > 0 && password.length >= 4) { 
+			var hashed = md5(password);
+			$('.ui.form').addClass("loading");
+			$.post("API.php?action=register", {username:username, password:hashed, firstname:firstname, lastname:lastname, email:email, terms:terms}, function (data){
+				console.log(data.replace("\\", ""));
+				$('.ui.form').removeClass("loading");
+				$('input[name=username]').val("");
+				$('input[name=password]').val("");
+				res = jQuery.parseJSON(data);
+				console.log(res);
+				if (res.hasOwnProperty("status") && res.status.indexOf("OK") > -1){
+					if(typeof(Storage) !== "undefined") {
+						localStorage.setItem("token", res.token);
+						//window.location = "insertword.html";
+					} else {
+						$('.ui.form').form ('add errors', ['It seems local storage does not exist or is disabled.']);
+					}
+				} else {
+					$('.ui.form').form ('add errors', ['Error. Try again later']);
+				}
+			});
+		}
+	}
+});
+</script>
+</html>

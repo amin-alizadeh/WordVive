@@ -1,8 +1,6 @@
 <?PHP
-$servername = "mysql1217.ixwebhosting.com";
-$uname = "A968741_Connect";
-$pwd = "Connect1364";
-$dbname = "A968741_NMC_2015";
+require_once ('DBcredentials.php');
+
 // Create connection
 $conn = new mysqli($servername, $uname, $pwd, $dbname);
 
