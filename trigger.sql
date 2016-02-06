@@ -1,0 +1,8 @@
+DELIMITER ;;
+CREATE TRIGGER `InsertUUID` 
+BEFORE INSERT ON `UserInfo` 
+FOR EACH ROW 
+BEGIN 
+	SET NEW.Identifier = REPLACE(UUID(),'-','');
+END
+;;

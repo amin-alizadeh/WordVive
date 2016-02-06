@@ -2,6 +2,8 @@
 date_default_timezone_set('Europe/Helsinki');
 require_once ('connect.php');
 require_once ('login.php');
+require 'PHPMailer/PHPMailerAutoload.php';
+
 function getUserFromToken($conn, $token) {
 	$uID = null;
 	$sql = "SELECT UserID, ValidUntil, IsValid FROM SessionToken WHERE Token=?";
@@ -52,13 +54,17 @@ function getUserInfo($conn, $userID) {
 }
 
 function insertWord($conn, $userID, $word, $translation, $description) {
-	$sql = "INSERT INTO `Words` (`UserID`, `Word`, `Translation`, `Description`) VALUES (".
-		 $userID . ", '" . $word . "', '" . $translation . "', '" . $description . "')";
-	if ($conn->query($sql) === TRUE) {
+	$sql = "INSERT INTO `Words` (`UserID`, `Word`, `Translation`, `Description`) VALUES (?,?,?,?)";
+
+	$word_stmt =  $conn->prepare($sql);
+	$word_stmt->bind_param("isss", $userID, $word, $translation, $description);
+	
+	if ($word_stmt->execute()) {
 		return "OK";
-	} else { 
+	} else {
 		return "Error";
 	}
+
 }
 function updateWord($conn, $userID, $id, $word, $translation, $description) {
 	$sql = "UPDATE `Words` SET `Word`=". $word .",`Translation`=". $translation .",`Description`=". $description .
@@ -147,7 +153,7 @@ function submitPractice($conn, $userID, $cr, $incr) {
 	
 }
 
-function registerNewUser($conn, $username, $password, $firstname, $lastname, $email, $terms) {
+function registerNewUser($conn, $username, $password, $firstname, $lastname, $email, $terms, $emailHost, $emailPort, $emailAddress, $emailPassword) {
 	$message = array();
 	$sql = 'SELECT (SELECT COUNT(username) FROM UserInfo WHERE username=?) AS usernameExist'.
 			', (SELECT COUNT(email) FROM UserInfo WHERE email=?) AS emailExist';
@@ -181,8 +187,13 @@ function registerNewUser($conn, $username, $password, $firstname, $lastname, $em
 		$user_stmt =  $conn->prepare($sql);
 		$user_stmt->bind_param("sssss", $username, $password, $email, $firstname, $lastname);
 		if ($user_stmt->execute()) {
-			$message['status'] = 'OK';
 			
+			if (prepareVerification($conn, $username, $email, $firstname, $lastname, $emailHost, $emailPort, $emailAddress, $emailPassword)) {
+				$message['status'] = 'OK';
+			} else {
+				$message["status"] = "Fail";
+				$message["message"] = "Server error. Try again later.";
+			}
 		} else {
 			$message["status"] = "Fail";
 			$message["message"] = "Server error. Try again later.";
@@ -194,13 +205,70 @@ function registerNewUser($conn, $username, $password, $firstname, $lastname, $em
 	return $message;
 }
 
+function prepareVerification($conn, $username, $email, $firstname, $lastname, $emailHost, $emailPort, $emailAddress, $emailPassword) {
+	$sql_ver = "INSERT INTO `Verifications`(`Code`, `UserID`, `VerificationCode`) VALUES(?,?,?)";
+	$sql_usr = "SELECT `ID`, `Identifier` FROM `UserInfo` WHERE username=?";
+	
+	if (!($stmt_usr = mysqli_prepare($conn, $sql_usr))) {
+		echo "Could not prepare the statement";
+	}
+	if (!$stmt_usr->bind_param('s', $username)) {
+		throw new \Exception("Database error: $stmt_usr->errno - $stmt_usr->error");
+	}
+
+	mysqli_stmt_execute($stmt_usr);
+	mysqli_stmt_bind_result($stmt_usr, $userID, $identifier);
+	$stmt_usr->store_result();
+	$num_result = $stmt_usr->num_rows;
+	mysqli_stmt_fetch($stmt_usr);
+	
+	$code = generateRandomString(32);
+	$verCode = generateRandomString(8);
+	
+	$stmt_ver = $conn->prepare($sql_ver);
+	$stmt_ver->bind_param("sis", $code, $userID, $verCode);
+	if($stmt_ver->execute()) {
+		return sendVerificationEmail($conn, $userID, $code, $verCode, $identifier, $email, $firstname, $lastname, $emailHost, $emailPort, $emailAddress, $emailPassword);
+	} else {
+		return false;
+	}
+}
+
+function sendVerificationEmail($conn, $userID, $code, $verCode, $identifier, $email, $firstname, $lastname, $emailHost, $emailPort, $emailAddress, $emailPassword) {
+	$mail = new PHPMailer;
+	$mail->isSMTP(); // Set mailer to use SMTP
+	$mail->Host = $emailHost;  // Specify main and backup SMTP servers
+	$mail->Username = $emailAddress;
+	$mail->Password = $emailPassword;
+	$mail->Port = $emailPort;
+	$mail->setFrom($emailAddress, 'WordVive Registration');
+	$mail->addAddress($email, $firstname);
+	$mail->addReplyTo($emailAddress, 'Information');
+	//$mail->SMTPDebug = 1;
+	//$mail->Debugoutput = 'html';
+	
+	$mail->isHTML(true);
+	$preparedMail = prepareEmail($firstname, $lastname, $username, $code, $verCode);
+	
+	$mail->Subject = $preparedMail["subject"];
+	$mail->Body    = $preparedMail["body"];
+	$mail->AltBody = $preparedMail["altbody"];
+
+	if(!$mail->send()) {
+		return false;
+	} else {
+		return true;
+	}
+
+}
+
 $message = array();
 if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["username"]) && isset($_POST["password"])) {
 	$message = checkLogin ($conn, $_POST["username"], $_POST["password"]);
 	
 } else if (isset($_GET["action"]) && $_GET["action"] == "register" && isset($_POST["username"]) && isset($_POST["password"]) && isset($_POST["firstname"]) && isset($_POST["lastname"]) && isset($_POST["email"]) && isset($_POST["terms"])) {
 	
-	$message = registerNewUser($conn, $_POST["username"], $_POST["password"], $_POST["firstname"], $_POST["lastname"], $_POST["email"], $_POST["terms"]);
+	$message = registerNewUser($conn, $_POST["username"], $_POST["password"], $_POST["firstname"], $_POST["lastname"], $_POST["email"], $_POST["terms"], $emailHost, $emailPort, $emailAddress, $emailPassword);
 	
 } else if (isset($_GET["token"]) && isset($_GET["action"])) {
 	$userID = getUserFromToken($conn, $_GET["token"]);

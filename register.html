@@ -7,27 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
   <!-- Site Properities -->
-  <title>Register Vocabulize</title>
-<!--
-  <link rel="stylesheet" type="text/css" href="dist/components/reset.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/reset.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/site.css">
-
-  <link rel="stylesheet" type="text/css" href="dist/components/container.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/grid.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/header.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/image.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/menu.css">
-
-  <link rel="stylesheet" type="text/css" href="dist/components/divider.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/segment.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/form.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/input.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/button.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/list.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/message.css">
-  <link rel="stylesheet" type="text/css" href="dist/components/icon.css">
--->
+  <title>Register WordVive</title>
 	<link rel="stylesheet" type="text/css" href="dist/semantic.css">
 	<script src="assets/library/jquery.min.js"></script>
 	<script src="dist/components/form.js"></script>
@@ -158,51 +138,72 @@
 </head>
 <body>
 <div class="ui center aligned grid">
-	<div class="left aligned column">
-		<h2 class="ui teal image header">
-		<p/>
-			<div class="content">
-				Create your account
+	<div class="row" id="register">
+		<div class="left aligned column">
+			<h2 class="ui teal image header">
+			<p/>
+				<div class="content">
+					Create your account
+				</div>
+			</h2>
+			
+			
+			<div class="ui large form">
+				<div class="two fields">
+					<div class="field">
+						<input name="firstname" type="text" placeholder="First name" maxlength="20">
+					</div>
+					<div class="field">
+						<input name="lastname" type="text" placeholder="Last name" maxlength="20">
+					</div>
+				</div>
+				<div class="two fields">
+					<div class="field">
+						<input name="username" type="text" placeholder="User name" maxlength="20">
+					</div>
+					<div class="field">
+						<input name="email" type="text" placeholder="Email" maxlength="50">
+					</div>
+				</div>
+				<div class="two fields">
+					<div class="field">
+						<input name="password" type="password" placeholder="Password" maxlength="20">
+					</div>
+					<div class="field">
+						<input name="repassword" type="password" placeholder="Confirm Password" maxlength="20">
+					</div>
+				</div>
+				<div class="inline field">
+					<div class="ui checkbox">
+						<input type="checkbox" name="terms">
+						<label>I agree to the <a href="tnc.html">Terms and Conditions</a></label>
+					</div>
+				</div>
+				<button class="ui teal fluid submit button" id="submit">Submit</button>
+				<div class="ui error message"></div>
 			</div>
-		</h2>
-		
-		
-		<div class="ui large form">
-			<div class="two fields">
-				<div class="field">
-					<input name="firstname" type="text" placeholder="First name" maxlength="20">
-				</div>
-				<div class="field">
-					<input name="lastname" type="text" placeholder="Last name" maxlength="20">
-				</div>
-			</div>
-			<div class="two fields">
-				<div class="field">
-					<input name="username" type="text" placeholder="User name" maxlength="20">
-				</div>
-				<div class="field">
-					<input name="email" type="text" placeholder="Email" maxlength="50">
-				</div>
-			</div>
-			<div class="two fields">
-				<div class="field">
-					<input name="password" type="password" placeholder="Password" maxlength="20">
-				</div>
-				<div class="field">
-					<input name="repassword" type="password" placeholder="Confirm Password" maxlength="20">
-				</div>
-			</div>
-			<div class="inline field">
-				<div class="ui checkbox">
-					<input type="checkbox" name="terms">
-					<label>I agree to the <a href="tnc.html">Terms and Conditions</a></label>
-				</div>
-			</div>
-			<button class="ui teal fluid submit button" id="submit">Submit</button>
-			<div class="ui error message"></div>
+
+
 		</div>
-
-
+	</div>
+	<div class="row" id="registerSuccess" style = "display:none; visibility:hidden;">
+		<div class="left aligned column">
+			<h2 class="ui teal image header">
+			<p/>
+				<div class="content">
+					Enter the verification sent to your email
+				</div>
+			</h2>
+			
+			<div class="ui large form">
+				
+				<div class="field">
+					<input name="verification" type="text" placeholder="Verification Code" maxlength="10">
+				</div>
+				<button class="ui teal fluid submit button" id="submit">Submit</button>
+			
+			</div>
+		</div>
 	</div>
 </div>
 
@@ -226,15 +227,23 @@ $("#submit").click(function(){
 				$('.ui.form').removeClass("loading");
 				$('input[name=username]').val("");
 				$('input[name=password]').val("");
+				$('input[name=repassword]').val("");
+				$('input[name=firstname]').val("");
+				$('input[name=lastname]').val("");
+				$('input[name=email]').val("");
+				$('input[name=terms]').prop('checked', false);
+				
 				res = jQuery.parseJSON(data);
 				console.log(res);
 				if (res.hasOwnProperty("status") && res.status.indexOf("OK") > -1){
-					if(typeof(Storage) !== "undefined") {
-						localStorage.setItem("token", res.token);
-						//window.location = "insertword.html";
-					} else {
-						$('.ui.form').form ('add errors', ['It seems local storage does not exist or is disabled.']);
-					}
+					$('#register').transition({
+						animation  : 'scale',
+						onComplete : function() {
+								$("#register").css("display", "none");
+								$("#register").css("visibility", "hidden");
+								$("#registerSuccess").transition('scale');
+							}
+					});
 				} else {
 					$('.ui.form').form ('add errors', ['Error. Try again later']);
 				}
