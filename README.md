@@ -9,3 +9,5 @@ You can simply create an account and activate your account. Then start inserting
 Please bear in mind that this is a work in progress and I develop in my free time.
 
 Please visit [WordVive](http://www.wordvive.com)
+
+Technologies: MySQL, PHP, HTML, CSS, JavaScript, JQuery, Semantic-ui
