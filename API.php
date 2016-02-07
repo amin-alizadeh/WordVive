@@ -2,7 +2,8 @@
 date_default_timezone_set('Europe/Helsinki');
 require_once ('connect.php');
 require_once ('login.php');
-require 'PHPMailer/PHPMailerAutoload.php';
+require_once 'PHPMailer/PHPMailerAutoload.php';
+require_once ('helper/verificationhelper.php');
 
 function getUserFromToken($conn, $token) {
 	$uID = null;
@@ -30,7 +31,7 @@ function getUserFromToken($conn, $token) {
 }
 
 function getUserInfo($conn, $userID) {
-	$sql = "SELECT NickName FROM UserInfo WHERE ID=?";//. $userID;
+	$sql = "SELECT CASE WHEN `NickName` IS NULL OR LENGTH(`NickName`) = 0 THEN CONCAT(`FirstName`,' ',`LastName`) ELSE `NickName` END AS NickName FROM UserInfo WHERE ID=?";
 	if (!($stmt = mysqli_prepare($conn, $sql))) {
 		echo "Could not prepare the statement";
 	}
@@ -248,7 +249,7 @@ function sendVerificationEmail($conn, $userID, $code, $verCode, $identifier, $em
 	//$mail->Debugoutput = 'html';
 	
 	$mail->isHTML(true);
-	$preparedMail = prepareEmail($firstname, $lastname, $username, $code, $verCode);
+	$preparedMail = prepareEmail($firstname, $lastname, $username, $code, $verCode);//From credentials.php
 	
 	$mail->Subject = $preparedMail["subject"];
 	$mail->Body    = $preparedMail["body"];
@@ -269,7 +270,13 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 } else if (isset($_GET["action"]) && $_GET["action"] == "register" && isset($_POST["username"]) && isset($_POST["password"]) && isset($_POST["firstname"]) && isset($_POST["lastname"]) && isset($_POST["email"]) && isset($_POST["terms"])) {
 	
 	$message = registerNewUser($conn, $_POST["username"], $_POST["password"], $_POST["firstname"], $_POST["lastname"], $_POST["email"], $_POST["terms"], $emailHost, $emailPort, $emailAddress, $emailPassword);
-	
+} else if (isset($_GET["action"]) && isset($_POST["code"]) && $_GET["action"] == "verification") {
+	$message["message"] = verifyCode($conn, $_POST["code"], $verificationValid);
+	if (stripos($message["message"], "success") !== false) {
+		$message["status"] = "OK";
+	} else {
+		$message["status"] = "Fail";
+	}
 } else if (isset($_GET["token"]) && isset($_GET["action"])) {
 	$userID = getUserFromToken($conn, $_GET["token"]);
 	if ( $userID != null) {

@@ -200,8 +200,23 @@
 				<div class="field">
 					<input name="verification" type="text" placeholder="Verification Code" maxlength="10">
 				</div>
-				<button class="ui teal fluid submit button" id="submit">Submit</button>
+				<button class="ui teal fluid submit button" id="submitVer">Submit</button>
 			
+			</div>
+		</div>
+	</div>
+	
+	<div class="row" id="verificationSuccess" style = "display:none; visibility:hidden;">
+		<div class="left aligned column">
+			<h2 class="ui teal image header">
+			<p/>
+				<div class="content" id="message">
+					Enter the verification sent to your email
+				</div>
+			</h2>
+			
+			<div class="ui large form">
+				<button class="ui teal fluid submit button" id="backLogin">Back to Login</button>
 			</div>
 		</div>
 	</div>
@@ -234,7 +249,7 @@ $("#submit").click(function(){
 				$('input[name=terms]').prop('checked', false);
 				
 				res = jQuery.parseJSON(data);
-				console.log(res);
+				
 				if (res.hasOwnProperty("status") && res.status.indexOf("OK") > -1){
 					$('#register').transition({
 						animation  : 'scale',
@@ -251,5 +266,28 @@ $("#submit").click(function(){
 		}
 	}
 });
+
+$("#submitVer").click(function(){
+	var verification = $('input[name=verification]').val();
+	$.post("API.php?action=verification", {code: verification}, function (data){
+		res = jQuery.parseJSON(data);
+		if (res.hasOwnProperty("status") && res.status.indexOf("OK") > -1){
+			$('#registerSuccess').transition({
+				animation  : 'scale',
+				onComplete : function() {
+						$("#registerSuccess").css("display", "none");
+						$("#registerSuccess").css("visibility", "hidden");
+						$("#verificationSuccess").transition('scale');
+					}
+			});
+		}
+	});
+});
+
+
+$("#backLogin").click(function(){
+	window.location.href = "login.html";
+});
+
 </script>
 </html>
