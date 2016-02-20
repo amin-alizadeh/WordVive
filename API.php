@@ -282,7 +282,7 @@ function sendVerificationEmail($conn, $userID, $code, $verCode, $identifier, $em
 
 $message = array();
 if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["username"]) && isset($_POST["password"])) {
-	$message = checkLogin ($conn, $_POST["username"], $_POST["password"]);
+	$message = checkLogin ($conn, $_POST["username"], $_POST["password"], $passwordSalt);
 	
 } else if (isset($_GET["action"]) && $_GET["action"] == "register" && isset($_POST["username"]) && isset($_POST["password"]) && isset($_POST["firstname"]) && isset($_POST["lastname"]) && isset($_POST["email"]) && isset($_POST["terms"])) {
 	

@@ -10,17 +10,17 @@ function generateRandomString($length = 32) {
     return $randomString;
 }
 
-function checkLogin($conn, $username, $password) {
+function checkLogin($conn, $username, $password, $passwordSalt) {
 	$message = array();
 
 	//$sql = "SELECT ID, Enabled FROM UserInfo WHERE username='" . $username . "'	AND password='" . $password . "'"; 
-	$sql = "SELECT ID, Enabled, Activated FROM UserInfo WHERE username=? AND password=?"; 
+	$sql = "SELECT ID, Enabled, Activated FROM UserInfo WHERE username=? AND password=MD5(? +`Identifier`+ ?)"; 
 	
 	
 	if (!($stmt = mysqli_prepare($conn, $sql))) {
 		echo "Could not prepare the statement";
 	}
-	if (!$stmt->bind_param('ss', $username, $password)) {
+	if (!$stmt->bind_param('sss', $username, $password, $passwordSalt)) {
 		throw new \Exception("Database error: $stmt->errno - $stmt->error");
 	}
 
