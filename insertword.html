@@ -26,7 +26,8 @@
     <link rel="stylesheet" type="text/css" href="dist/components/icon.css">
 	<link rel="stylesheet" type="text/css" href="dist/semantic.css">
 	
-	<script src="assets/library/jquery.min.js"></script>
+	<script src="assets/library/jquery-latest.min.js"></script>
+  
 	<script src="dist/semantic.js"></script>
 	
     <style type="text/css">
@@ -112,17 +113,25 @@
 		<i class="book icon"></i>
 		Words
 	</h4>
+  
 
 	<div class="ui text container">
 	<div class="ui form" id="wordTable">
 		<table class="ui celled table" id="wordlist">
 			<thead>
 				<tr>
-					<th class="four wide"><i class="book icon"></i>Word</th>
-					<th class="four wide"><i class="translate icon"></i>Translation</th>
-					<th class="four wide"><i class="file text outline icon"></i>Description</th>
-					<th class="two wide"><i class="checkered flag icon"></i>Step</th>
-					<th class="two wide"><i class="settings icon"></i></th>
+					<th class="four wide" id="thWord"><i class="book icon"></i>Word</th>
+					<th class="four wide" id="thTranslation"><i class="translate icon"></i>Translation</th>
+					<th class="four wide" id="thDescription"><i class="file text outline icon"></i>Description</th>
+					<th class="two wide" id="thStep"><i class="checkered flag icon"></i>Step</th>
+					<th class="two wide" class="no-sort">
+            <select class="ui dropdown" id="wordsPerPage">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+            </select>
+          </th>
 				</tr>
 			</thead>
 			<tbody>
@@ -144,10 +153,10 @@
     </div>
 	</div>
 	
-	<div class="ui small modal">
+	<div class="ui small modal" id="wordEditModal">
 		<i class="close icon"></i>
 		<div class="header" id="modalHeader">
-			
+			Edit
 		</div>
 		<div class="content">
 			<div class="description">
@@ -213,9 +222,31 @@
 			</div>
 		</div>
 	</div>	
-		
-
 	
+  <div class="ui small modal" id="wordDeleteModal">
+		<i class="close icon"></i>
+		<div class="header" id="modalHeader">
+			Delete
+		</div>
+		<div class="content">
+      <div class="description">
+        Do you want to delete <span id="deleteWordDes"></span>?
+      </div>
+    </div>
+		<div class="actions">
+			<div class="ui black right labeled icon button" id="cancelDeleteWord" onclick="cancelDelete()">
+				Cancel
+				<i class="minus circle icon"></i>
+			</div>
+			
+			<div class="ui green right labeled icon button" id="submitDeleteWord" onclick="submitDelete()">
+				OK
+				<i class="checkmark icon"></i>
+			</div>
+		</div>
+	</div>
+  
+  
     <div class="ui inverted vertical footer segment">
         <div class="ui center aligned container">
             <!--<div class="ui stackable inverted divided grid">

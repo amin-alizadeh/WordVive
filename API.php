@@ -67,12 +67,29 @@ function insertWord($conn, $userID, $word, $translation, $description) {
 	}
 
 }
+
 function updateWord($conn, $userID, $id, $word, $translation, $description) {
-	$sql = "UPDATE `Words` SET `Word`=". $word .",`Translation`=". $translation .",`Description`=". $description .
-		" WHERE `ID`=". $id ." AND `UserID`=". $userID;
-	if ($conn->query($sql) === TRUE) {
+	$sql = "UPDATE `Words` SET `Word`=?,`Translation`=?,`Description`=? WHERE `ID`=? AND `UserID`=?";
+  
+	$word_stmt =  $conn->prepare($sql);
+	$word_stmt->bind_param("sssii", $word, $translation, $description, $id, $userID);
+	
+	if ($word_stmt->execute()) {
 		return "OK";
-	} else { 
+	} else {
+		return "Error";
+	}
+}
+
+function deleteWord($conn, $userID, $id) {
+	$sql = "DELETE FROM `Words` WHERE `ID`=? AND `UserID`=?";
+  
+	$word_stmt =  $conn->prepare($sql);
+	$word_stmt->bind_param("ii", $id, $userID);
+	
+	if ($word_stmt->execute()) {
+		return "OK";
+	} else {
 		return "Error";
 	}
 }
@@ -327,7 +344,11 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				$word = isset($_POST["word"]) ? $_POST["word"] : "";
 				$translation = isset($_POST["translation"]) ? $_POST["translation"] : "";
 				$description = isset($_POST["description"]) ? $_POST["description"] : "";
-				$message["status"] = updateWord($conn, $userID, $id, $word, $translation, $description);
+				$message["status"] = updateWord($conn, $userID, $wid, $word, $translation, $description);
+				break;
+      case "deleteword":
+				$wid = isset($_POST["id"]) ? $_POST["id"] : "";
+				$message["status"] = deleteWord($conn, $userID, $wid);
 				break;
 		}
 		

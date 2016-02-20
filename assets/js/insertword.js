@@ -1,4 +1,4 @@
-var wordsPerPage = 5;
+var wordsPerPage = 10;
 var paginationStart = '<div class="ui right floated pagination menu">';
 var paginationEnd = '</div>';
 var pageJump = '<a class="item" onclick="jumpToPage(%n%)" id="pgJump%n%">%n%</a>';
@@ -12,9 +12,18 @@ var wordSettings = '<i onclick="editWord(%n%)" class="teal edit icon"></i>'+
 					'<i onclick="deleteWord(%n%)" class="red remove icon"></i>';
 var wordsList = [];
 var wordEditID = -1;
+var wordDeleteID = -1;
 
 $(document).ready(function() {
-	$('.ui.small.modal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
+  $('#wordsPerPage').val(wordsPerPage);
+  $('#wordsPerPage').change(function() {
+    var newWordsPerPage = parseInt($('#wordsPerPage').val());
+    var newPageNumber = Math.floor(((currentPage-1) * wordsPerPage) / newWordsPerPage) + 1;
+    populateWords(newWordsPerPage, newPageNumber);
+  });
+  
+	$('#wordEditModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
+	$('#wordDeleteModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
 	populateWords(wordsPerPage, 1);
 	$("#insert").click(function () {
 		var word = $("#word").val().trim();
@@ -75,14 +84,15 @@ $(document).ready(function() {
 	});
 });
 
-function populateWords(wordsPerPage, jump) {
+function populateWords(setWordsPerPage, jump) {
+  wordsPerPage = setWordsPerPage;
 	var tbl = document.getElementById("wordlist");
 	$("#wordTable").addClass("loading");
 	$.get("API.php?token=" + token + "&action=wordcount", function (data) {
 		$("#wordTable").removeClass("loading");
 		res = jQuery.parseJSON(data);
 		var wordsCount = res.wordcount;
-		numberOfPages = Math.ceil(wordsCount / wordsPerPage);
+		numberOfPages = Math.ceil(wordsCount / setWordsPerPage);
 		if (numberOfPages > 1) {
 			var pageNumbers = (numberOfPages > 1) ? paginationStart + previousPage : "";
 			
@@ -92,9 +102,9 @@ function populateWords(wordsPerPage, jump) {
 			pageNumbers += (numberOfPages > 1) ? nextPage + paginationEnd : "";
 			$("#pageNavigation").html(pageNumbers);
 		}
-		if (jump > 0) {
-			jumpToPage(jump);
-		}
+		if (jump < 1) jump = 1;
+    if(jump > numberOfPages) jump = numberOfPages;
+    jumpToPage(jump);
 	});
 	
 }
@@ -151,7 +161,7 @@ function jumpToPreviousPage() {
 }
 
 function editWord(id) {
-	if (! $('.ui.small.modal').modal('is active')) $('.ui.small.modal').modal('show');
+	if (! $('#wordEditModal').modal('is active')) $('#wordEditModal').modal('show');
 	$('#editword').val(wordsList[id].Word);
 	$('#edittranslation').val(wordsList[id].Translation);
 	$('#editdescription').val(wordsList[id].Description);
@@ -159,26 +169,49 @@ function editWord(id) {
 }
 
 function deleteWord(id) {
-	console.log("Delete word " + id);
+	if (! $('#wordDeleteModal').modal('is active')) $('#wordDeleteModal').modal('show');
+	$('#deleteWordDes').html(wordsList[id].Word);
+	
+	wordDeleteID = id;
 }
 
 function submitEdit() {
 	$("#modalDescription").addClass("loading");
 	$("#submitEditWord").addClass("loading");
 	$("#cancelEditWord").addClass("loading");
-	$.post("API.php?token=" + token + "&action=insert", {word:$('#editword').val(), id:wordsList[wordEditID].ID, 
+	$.post("API.php?token=" + token + "&action=updateword", {word:$('#editword').val(), id:wordsList[wordEditID].ID, 
 	translation:$('#edittranslation').val(), description:$('#editdescription').val()}, function (data) {
 		$("#modalDescription").removeClass("loading");
 		$("#submitEditWord").removeClass("loading");
 		$("#cancelEditWord").removeClass("loading");
-		$('.ui.small.modal').modal('hide');
+		$('#wordEditModal').modal('hide');
 		var res = jQuery.parseJSON(data);
 		if (res.status == "OK") {
 			console.log("OK");
+      jumpToPage(currentPage);
+		}
+	});
+}
+
+function submitDelete() {
+	$("#submitDeleteWord").addClass("loading");
+	$("#cancelDeleteWord").addClass("loading");
+	$.post("API.php?token=" + token + "&action=deleteword", {id:wordsList[wordDeleteID].ID}, function (data) {
+		$("#submitDeleteWord").removeClass("loading");
+		$("#submitDeleteWord").removeClass("loading");
+		$('#wordDeleteModal').modal('hide');
+		var res = jQuery.parseJSON(data);
+		if (res.status == "OK") {
+			console.log("OK");
+      jumpToPage(currentPage);
 		}
 	});
 }
 
 function cancelEdit() {
+  if ($('#wordEditModal').modal('is active')) $('#wordEditModal').modal('hide');
+}
 
+function cancelDelete() {
+  if ($('#wordDeleteModal').modal('is active')) $('#wordDeleteModal').modal('hide');
 }
