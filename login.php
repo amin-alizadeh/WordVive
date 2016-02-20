@@ -13,7 +13,6 @@ function generateRandomString($length = 32) {
 function checkLogin($conn, $username, $password, $passwordSalt) {
 	$message = array();
 
-	//$sql = "SELECT ID, Enabled FROM UserInfo WHERE username='" . $username . "'	AND password='" . $password . "'"; 
 	$sql = "SELECT ID, Enabled, Activated FROM UserInfo WHERE username=? AND password=MD5(? +`Identifier`+ ?)"; 
 	
 	
