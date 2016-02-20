@@ -1,4 +1,4 @@
-var wordsPerPage = 10;
+var wordsPerPage = 5;
 var paginationStart = '<div class="ui right floated pagination menu">';
 var paginationEnd = '</div>';
 var pageJump = '<a class="item" onclick="jumpToPage(%n%)" id="pgJump%n%">%n%</a>';
@@ -93,15 +93,7 @@ function populateWords(setWordsPerPage, jump) {
 		res = jQuery.parseJSON(data);
 		var wordsCount = res.wordcount;
 		numberOfPages = Math.ceil(wordsCount / setWordsPerPage);
-		if (numberOfPages > 1) {
-			var pageNumbers = (numberOfPages > 1) ? paginationStart + previousPage : "";
-			
-			for (var i = 1; i <= numberOfPages; i++) {
-				pageNumbers += pageJump.replace("%n%", i).replace("%n%", i).replace("%n%", i);
-			}
-			pageNumbers += (numberOfPages > 1) ? nextPage + paginationEnd : "";
-			$("#pageNavigation").html(pageNumbers);
-		}
+		
 		if (jump < 1) jump = 1;
     if(jump > numberOfPages) jump = numberOfPages;
     jumpToPage(jump);
@@ -109,6 +101,25 @@ function populateWords(setWordsPerPage, jump) {
 	
 }
 
+function paginationList(numberOfPages, jump) {
+  if (numberOfPages > 1) {
+			var pageNumbers = (numberOfPages > 1) ? paginationStart + previousPage : "";
+			var paginationCorrectionAdded = false;
+      //console.log("---");
+			for (var i = 1; i <= numberOfPages; i++) {
+        //console.log("page: " + i + " of " + numberOfPages + " to " + jump + " then " + ((i < 2) || ((numberOfPages - i) < 2) || (Math.abs(jump - i) < 2)));
+        if ((i < 2) || ((numberOfPages - i) < 2) || (Math.abs(jump - i) < 2)) {
+          pageNumbers += pageJump.replace("%n%", i).replace("%n%", i).replace("%n%", i);
+          paginationCorrectionAdded = false;
+        } else if (!paginationCorrectionAdded){
+          pageNumbers += '<a class="item">:</a>';
+          paginationCorrectionAdded = true;
+        }
+			}
+			pageNumbers += (numberOfPages > 1) ? nextPage + paginationEnd : "";
+			$("#pageNavigation").html(pageNumbers);
+		}
+}
 
 function wordsListPagination(firstW, lastW) {	
 	$("#wordTable").addClass("loading");
@@ -149,6 +160,7 @@ function jumpToPage(n) {
 		currentPage = n;
 		$("#pgJump" + currentPage).addClass("disabled");
 		wordsListPagination((n - 1) * wordsPerPage, n * wordsPerPage);
+    paginationList(numberOfPages, n);
 	}
 }
 
