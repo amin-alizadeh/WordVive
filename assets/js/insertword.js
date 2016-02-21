@@ -1,4 +1,4 @@
-var wordsPerPage = 5;
+var wordsPerPage = 10;
 var paginationStart = '<div class="ui right floated pagination menu">';
 var paginationEnd = '</div>';
 var pageJump = '<a class="item" onclick="jumpToPage(%n%)" id="pgJump%n%">%n%</a>';
