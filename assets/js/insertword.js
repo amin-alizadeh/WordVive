@@ -11,10 +11,41 @@ var wordSettings = '<button class="circular ui tiny teal icon button"><i class="
 var wordSettings = '<i onclick="editWord(%n%)" class="teal edit icon"></i>'+
 					'<i onclick="deleteWord(%n%)" class="red remove icon"></i>';
 var wordsList = [];
+var listList = [];
 var wordEditID = -1;
 var wordDeleteID = -1;
 
 $(document).ready(function() {
+  //Fetch the word lists:
+  var firstL = 0;
+  var lastL = 10;
+  getWordLists(firstL, lastL);
+  
+});
+
+function getWordLists(firstL, lastL) {
+  $.get("API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
+    var res = jQuery.parseJSON(data);
+		listList = res.lists;
+    $('#wordLists').html("");
+    for (var i = 0; i < listList.length; i++) {
+      $('#wordLists').
+      append($("<option></option>").
+      attr("value", listList[i].ListID).
+      text(listList[i].ListName));
+    }
+    
+    selectWordsList();
+    populateWords(wordsPerPage, 1);
+  });
+}
+
+function selectWordsList(){
+  $('#wordLists').change(function() {
+    var listID = parseInt($('#wordLists').val());
+    populateWords(wordsPerPage, 1);
+  });
+    
   $('#wordsPerPage').val(wordsPerPage);
   $('#wordsPerPage').change(function() {
     var newWordsPerPage = parseInt($('#wordsPerPage').val());
@@ -24,7 +55,25 @@ $(document).ready(function() {
   
 	$('#wordEditModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
 	$('#wordDeleteModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
-	populateWords(wordsPerPage, 1);
+	
+  $("#insertList").click(function () {
+    var list = $("#listName").val().trim();
+    if (word.length == 0) {
+      $("#listName").addClass("error");
+    } else {
+      $("#listName").removeClass("error");
+      $("#insertList").addClass("loading");
+      $.post("API.php?token=" + token + "&action=insertlist", {list:list}, function (data) {
+        $("#insertList").removeClass("loading");
+        var res = jQuery.parseJSON(data);
+				if (res.status == "OK") {
+          $("#listName").val("");
+          getWordLists(0, 10);
+        }
+      });
+    }
+  });
+  
 	$("#insert").click(function () {
 		var word = $("#word").val().trim();
 		var translation = $("#translation").val().trim();
@@ -42,8 +91,9 @@ $(document).ready(function() {
 			$("#wordfield").removeClass("error");
 			$("#translationfield").removeClass("error");
 			$("#insert").addClass("loading");
-			
-			$.post("API.php?token=" + token + "&action=insert", {word:word, translation:translation, description:description}, function (data) {
+      
+			var list = $('#wordLists').val();
+			$.post("API.php?token=" + token + "&action=insert", {word:word, translation:translation, description:description, list:list}, function (data) {
 				$("#insert").removeClass("loading");
 				var res = jQuery.parseJSON(data);
 				if (res.status == "OK") {
@@ -58,19 +108,6 @@ $(document).ready(function() {
 					}, 1000);
 					$("#insert").addClass("teal");
 					if (currentPage == 1) {
-						/*var tbl = document.getElementById("wordlist");
-						tbl.deleteRow(tbl.rows.length - 2);
-						var r = tbl.insertRow(1);
-						var w = r.insertCell(0);
-						var t = r.insertCell(1);
-						var d = r.insertCell(2);
-						var s = r.insertCell(3);
-						var ss = r.insertCell(4);
-						w.innerHTML = word;
-						t.innerHTML = translation;
-						d.innerHTML = description;
-						s.innerHTML = "1";
-						ss.innerHTML = wordSettings;*/
 						populateWords(wordsPerPage, 1);
 					} else {
 						populateWords(wordsPerPage, 1);
@@ -82,13 +119,13 @@ $(document).ready(function() {
 		}
 		
 	});
-});
-
+}
 function populateWords(setWordsPerPage, jump) {
   wordsPerPage = setWordsPerPage;
 	var tbl = document.getElementById("wordlist");
 	$("#wordTable").addClass("loading");
-	$.get("API.php?token=" + token + "&action=wordcount", function (data) {
+  var list = $('#wordLists').val();
+	$.get("API.php?token=" + token + "&action=wordcount&list="+list, function (data) {
 		$("#wordTable").removeClass("loading");
 		res = jQuery.parseJSON(data);
 		var wordsCount = res.wordcount;
@@ -123,7 +160,8 @@ function paginationList(numberOfPages, jump) {
 
 function wordsListPagination(firstW, lastW) {	
 	$("#wordTable").addClass("loading");
-	$.get("API.php?token=" + token + "&action=wordlist&first=" + firstW + "&last=" + lastW, function (data) {
+  var list = $('#wordLists').val();
+	$.get("API.php?token=" + token + "&action=wordlist&list=" + list +"&first=" + firstW + "&last=" + lastW, function (data) {
 		$("#wordTable").removeClass("loading");
 		var res = jQuery.parseJSON(data);
 		wordsList = res.words;

@@ -1,7 +1,7 @@
 <?PHP
 date_default_timezone_set('Europe/Helsinki');
-require_once ('connect.php');
-require_once ('login.php');
+require_once ('connect.php'); //credentials.php is required in connect.php
+require_once ('login.php'); //lib/random/random.php is required in login.php
 require_once 'PHPMailer/PHPMailerAutoload.php';
 require_once ('helper/verificationhelper.php');
 
@@ -54,13 +54,14 @@ function getUserInfo($conn, $userID) {
 	}
 }
 
-function insertWord($conn, $userID, $word, $translation, $description) {
+function insertWord($conn, $userID, $word, $translation, $description, $list) {
 	$sql = "INSERT INTO `Words` (`UserID`, `Word`, `Translation`, `Description`) VALUES (?,?,?,?)";
-
+  
 	$word_stmt =  $conn->prepare($sql);
 	$word_stmt->bind_param("isss", $userID, $word, $translation, $description);
 	
 	if ($word_stmt->execute()) {
+    
 		return "OK";
 	} else {
 		return "Error";
@@ -94,9 +95,20 @@ function deleteWord($conn, $userID, $id) {
 	}
 }
 
-function getWordsList($conn, $userID, $first, $last) {
-	$sql = "SELECT ID, Word, Translation, Description, Step FROM Words " .
+function getWordsList($conn, $userID, $list, $first, $last) {
+  $sql = "SELECT w.ID, w.Word, w.Translation, w.Description, CASE WHEN uws.Step IS NULL THEN 0 ELSE uws.Step END AS Step ".
+  "FROM UserInfo AS usr ".
+  "INNER JOIN UserList AS ul  ON usr.ID = ul.UserID ".
+  "INNER JOIN List AS l ON l.ListID=ul.ListID ".
+  "INNER JOIN WordList AS wl ON wl.ListID = l.ListID ".
+  "INNER JOIN Words AS w ON w.ID = wl.WordID ".
+  "LEFT OUTER JOIN UserWordStep AS uws ON (uws.WordID=w.ID AND uws.UserID=usr.ID) ".
+  "WHERE usr.ID=" . $userID . " AND ul.ListID = " . $list . " ORDER BY InsertTime DESC LIMIT " . 
+  $first . ", " . ($last - $first);
+  
+	/*$sql = "SELECT ID, Word, Translation, Description, Step FROM Words " .
 			"WHERE UserID = " . $userID . " ORDER BY InsertTime DESC LIMIT " . $first . ", " . ($last - $first);
+  */
 	$result = $conn->query($sql);
 	$message = array();
 	if ($result->num_rows > 0) {
@@ -107,9 +119,14 @@ function getWordsList($conn, $userID, $first, $last) {
 	return $message;
 }
 
-function getWordsCount($conn, $userID) {
-	$sql = "SELECT COUNT(Word) AS wordcount FROM Words " .
-			"WHERE UserID = " . $userID;
+function getWordsCount($conn, $list, $userID) {
+  //$sql = "SELECT COUNT(Word) AS wordcount FROM Words WHERE UserID = " . $userID;
+  $sql="SELECT COUNT(w.Word) AS wordcount ".
+    "FROM Words AS w ".
+    "INNER JOIN WordList AS wl ON wl.WordID = w.ID AND wl.ListID = ". $list ." ".
+    "INNER JOIN List AS l ON l.ListID = wl.ListID  ".
+    "INNER JOIN UserList AS ul ON ul.ListID = l.ListID AND ul.UserID=" . $userID;
+  
 	$result = $conn->query($sql);
 	$message = "0";
 	if ($result->num_rows > 0) {
@@ -171,7 +188,7 @@ function submitPractice($conn, $userID, $cr, $incr) {
 	
 }
 
-function registerNewUser($conn, $username, $password, $firstname, $lastname, $email, $terms, $emailHost, $emailPort, $emailAddress, $emailPassword) {
+function registerNewUser($conn, $username, $password, $firstname, $lastname, $email, $terms, $emailHost, $emailPort, $emailAddress, $emailPassword, $passwordSalt) {
 	$message = array();
 	$sql = 'SELECT (SELECT COUNT(username) FROM UserInfo WHERE username=?) AS usernameExist'.
 			', (SELECT COUNT(email) FROM UserInfo WHERE email=?) AS emailExist';
@@ -201,9 +218,9 @@ function registerNewUser($conn, $username, $password, $firstname, $lastname, $em
 	} else {
 		
 		
-		$sql = "INSERT INTO UserInfo(username, password, email, FirstName, LastName) VALUES (?,?,?,?,?)";
+		$sql = "INSERT INTO UserInfo(username, password, email, FirstName, LastName, passwordsalt) VALUES (?,?,?,?,?,?)";
 		$user_stmt =  $conn->prepare($sql);
-		$user_stmt->bind_param("sssss", $username, $password, $email, $firstname, $lastname);
+		$user_stmt->bind_param("ssssss", $username, $password, $email, $firstname, $lastname, $passwordSalt);
 		if ($user_stmt->execute()) {
 			
 			if (prepareVerification($conn, $username, $email, $firstname, $lastname, $emailHost, $emailPort, $emailAddress, $emailPassword)) {
@@ -280,13 +297,63 @@ function sendVerificationEmail($conn, $userID, $code, $verCode, $identifier, $em
 
 }
 
+function getListList($conn, $userID, $first=0, $last=10) {
+  $cnt = $last - $first;
+  /*
+  SELECT `usr`.`ID`,`l`.`ListID`, `l`.`ListName` 
+  FROM `UserInfo` AS `usr` 
+  INNER JOIN `UserList` AS `ul` ON `ul`.`UserID` = `usr`.`ID`
+  INNER JOIN `List` AS `l` ON `l`.`ListID`=`ul`.`ListID` 
+  WHERE `usr`.`ID`=1
+  ORDER BY `ListCreatedOn` DESC LIMIT 0,10
+  */
+  $sql = "SELECT `l`.`ListID`, `l`.`ListName` FROM `UserInfo` AS `usr` INNER JOIN `UserList` AS `ul` ON `ul`.`UserID` = `usr`.`ID` ".
+      "INNER JOIN `List` AS `l` ON `l`.`ListID`=`ul`.`ListID` ".
+      "WHERE `usr`.`ID`=". intval($userID) . " ORDER BY `ListCreatedOn` DESC LIMIT " . intval($first) ."," . intval($cnt);
+	$result = $conn->query($sql);
+	$list = array();
+	if ($result->num_rows > 0) {
+		while($row = $result->fetch_assoc()) {
+			$list[] = $row;
+		}
+	}
+  
+  return $list;
+}
+
+function insertList($conn, $userID, $list) {
+  $sql = "INSERT INTO `List`(`ListName`) VALUES (?)";
+  $list_in_stmt =  $conn->prepare($sql);
+  $list_in_stmt->bind_param("s", $list);
+  if ($list_in_stmt->execute()) {
+    $sql = "SELECT LAST_INSERT_ID() AS ListID";
+    $list_stmt =  $conn->prepare($sql);
+    if ($list_stmt->execute()) {
+      mysqli_stmt_bind_result($list_stmt, $listID);
+      $list_stmt->store_result();
+      $listID = intval($listID);
+      $num_result = $list_stmt->num_rows;
+      mysqli_stmt_fetch($list_stmt);
+      if($num_result == 1) {
+        $sql = "INSERT INTO `UserList`(`ListID`, `UserID`) VALUES (?, ?)";
+        $stmt_user_list = $conn->prepare($sql);
+        $stmt_user_list->bind_param("ii", $listID, $userID);
+        if ($stmt_user_list->execute()) {
+          $message = "OK";
+        }
+      }      
+    }
+  }
+  return $message;
+}
+
 $message = array();
 if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["username"]) && isset($_POST["password"])) {
 	$message = checkLogin ($conn, $_POST["username"], $_POST["password"], $passwordSalt);
 	
 } else if (isset($_GET["action"]) && $_GET["action"] == "register" && isset($_POST["username"]) && isset($_POST["password"]) && isset($_POST["firstname"]) && isset($_POST["lastname"]) && isset($_POST["email"]) && isset($_POST["terms"])) {
 	
-	$message = registerNewUser($conn, $_POST["username"], $_POST["password"], $_POST["firstname"], $_POST["lastname"], $_POST["email"], $_POST["terms"], $emailHost, $emailPort, $emailAddress, $emailPassword);
+	$message = registerNewUser($conn, $_POST["username"], $_POST["password"], $_POST["firstname"], $_POST["lastname"], $_POST["email"], $_POST["terms"], $emailHost, $emailPort, $emailAddress, $emailPassword, $passwordSalt);
 } else if (isset($_GET["action"]) && isset($_POST["code"]) && $_GET["action"] == "verification") {
 	$message["message"] = verifyCode($conn, $_POST["code"], $verificationValid);
 	if (stripos($message["message"], "success") !== false) {
@@ -303,7 +370,8 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				$word = isset($_POST["word"]) ? $_POST["word"] : "";
 				$translation = isset($_POST["translation"]) ? $_POST["translation"] : "";
 				$description = isset($_POST["description"]) ? $_POST["description"] : "";
-				$message["status"] = insertWord($conn, $userID, $word, $translation, $description);
+        $list = $_POST["list"];
+				$message["status"] = insertWord($conn, $userID, $word, $translation, $description, $list);
 				break;
 			case "get":
 				$message["action"] = "check";
@@ -312,10 +380,10 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				$message["user"] = getUserInfo($conn, $userID);
 			break;
 			case "wordlist":
-				$message["words"] = getWordsList($conn, $userID, $_GET["first"], $_GET["last"]);
+				$message["words"] = getWordsList($conn, $userID, $_GET["list"], $_GET["first"], $_GET["last"]);
 				break;
 			case "wordcount":
-				$message["wordcount"] = getWordsCount($conn, $userID);
+				$message["wordcount"] = getWordsCount($conn, $_GET["list"], $userID);
 				break;
 			case "logout":
 				$message["logout"] = logUserOut($conn, $_GET["token"]);
@@ -350,6 +418,14 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				$wid = isset($_POST["id"]) ? $_POST["id"] : "";
 				$message["status"] = deleteWord($conn, $userID, $wid);
 				break;
+      case "insertlist":
+				$list = $_POST["list"];
+				$message["status"] = insertList($conn, $userID, $list);
+				break;
+      case "listlist":
+				$message["lists"] = getListList($conn, $userID, $_GET["first"], $_GET["last"]);
+				break;
+      
 		}
 		
 	} else {

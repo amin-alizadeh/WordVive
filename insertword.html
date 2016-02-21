@@ -60,6 +60,35 @@
   </div>
 
   <div class="ui main text container">
+    <h1 class="ui header">Lists</h1>
+    <p>Create or pick a list</p>
+
+		<div class="ui two column stackable grid">	
+			<div class="three column row">
+				<div class="six wide column">
+					<div class="field">
+						<div id="wordfield" class="ui fluid left icon corner labeled input">
+							<i class="list icon"></i>
+							<input type="text" id="listName" placeholder="List">
+							<div class="ui corner label">
+								<i class="asterisk icon"></i>
+							</div>
+						</div>
+					</div>
+				</div>
+        <div class="three wide column">
+					<button class="ui teal submit button" id="insertList">Insert</button>
+				</div>
+        <div class="seven wide column">
+					<select class="ui fluid dropdown" id="wordLists">
+          </select>
+				</div>
+			</div>
+			
+		</div>
+  </div>
+  
+  <div class="ui main text container">
     <h1 class="ui header">Insert a word</h1>
     <p>Insert a word with its translation. If needed, you can add extra descriptions for the word.</p>
 
@@ -123,7 +152,7 @@
 					<th class="four wide" id="thTranslation"><i class="translate icon"></i>Translation</th>
 					<th class="four wide" id="thDescription"><i class="file text outline icon"></i>Description</th>
 					<th class="two wide" id="thStep"><i class="checkered flag icon"></i>Step</th>
-					<th class="two wide" class="no-sort">
+					<th class="two wide">
             <select class="ui dropdown" id="wordsPerPage">
               <option value="5">5</option>
               <option value="10">10</option>

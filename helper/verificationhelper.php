@@ -42,6 +42,29 @@ function verifyCode($conn, $codeHash, $verificationValid) {
 				$stmt_user_active->bind_param("i", $userID);
 				if ($stmt_user_active->execute()) {
 					$message = "Successful verification.";
+          $sql = "INSERT INTO `List`(`ListName`) VALUES ('Default')";
+          $list_in_stmt =  $conn->prepare($sql);
+          if ($list_in_stmt->execute()) {
+            $sql = "SELECT LAST_INSERT_ID() AS ListID";
+            $list_stmt =  $conn->prepare($sql);
+            if ($list_stmt->execute()) {
+              mysqli_stmt_bind_result($list_stmt, $listID);
+              $list_stmt->store_result();
+              $num_result = $list_stmt->num_rows;
+              mysqli_stmt_fetch($list_stmt);
+              if($num_result == 1) {
+                $sql = "INSERT INTO `UserList`(`ListID`, `UserID`) VALUES (?, ?)";
+                $stmt_user_list = $conn->prepare($sql);
+                $stmt_user_list->bind_param("ii", $listID, $userID);
+                  
+                if ($stmt_user_list->execute()) {
+                  $message = "Successful verification. And List created.";
+                }
+                
+              }
+              
+            }
+          }
 				} else {
 					$message = "could not activate";
 				}
