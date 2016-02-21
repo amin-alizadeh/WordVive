@@ -1,13 +1,33 @@
 <?PHP
+require_once "lib/random/random.php";
 
 function generateRandomString($length = 32) {
-    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $charactersLength = strlen($characters);
-    $randomString = '';
-    for ($i = 0; $i < $length; $i++) {
-        $randomString .= $characters[rand(0, $charactersLength - 1)];
-    }
-    return $randomString;
+    
+  try {
+    $string = random_bytes($length);
+    $randomString = (bin2hex($string));
+  } catch (TypeError $e) {
+    // Well, it's an integer, so this IS unexpected.    //die("An unexpected error has occurred"); 
+    $randomString = getRandomString($length);
+  } catch (Error $e) {
+    // This is also unexpected because 32 is a reasonable integer.    //die("An unexpected error has occurred");
+    $randomString = getRandomString($length);
+  } catch (Exception $e) {
+    // If you get this message, the CSPRNG failed hard.     //die("Could not generate a random string. Is our OS secure?");
+    $randomString = getRandomString($length);
+  }
+
+  return substr ($randomString, 0, $length);
+}
+
+function getRandomString($length = 32) {
+  $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  $charactersLength = strlen($characters);
+  $randomString = '';
+  for ($i = 0; $i < $length; $i++) {
+      $randomString .= $characters[rand(0, $charactersLength - 1)];
+  }
+  return $randomString;
 }
 
 function checkLogin($conn, $username, $password, $passwordSalt) {
