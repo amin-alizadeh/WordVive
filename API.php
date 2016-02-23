@@ -61,8 +61,31 @@ function insertWord($conn, $userID, $word, $translation, $description, $list) {
 	$word_stmt->bind_param("isss", $userID, $word, $translation, $description);
 	
 	if ($word_stmt->execute()) {
-    
-		return "OK";
+    $sql = "SELECT LAST_INSERT_ID() AS WordID";
+    $list_stmt =  $conn->prepare($sql);
+    $user_list_exec = false;
+    $user_word_step_exec = false;
+    if ($list_stmt->execute()) {
+      mysqli_stmt_bind_result($list_stmt, $wordID);
+      $list_stmt->store_result();
+      $num_result = $list_stmt->num_rows;
+      mysqli_stmt_fetch($list_stmt);
+      if($num_result == 1) {
+        $sql = "INSERT INTO `WordList`(`ListID`, `WordID`) VALUES (?,?)";
+        $stmt_user_list = $conn->prepare($sql);
+        $stmt_user_list->bind_param("ii", $list, $wordID);
+        $user_list_exec = $stmt_user_list->execute();
+      }
+      $sql = "INSERT INTO `UserWordStep`(`UserID`, `WordID`) VALUES (?,?)";
+      $stmt_user_word_step = $conn->prepare($sql);
+      $stmt_user_word_step->bind_param("ii", $userID, $wordID);
+      $user_word_step_exec = $stmt_user_word_step->execute();
+    }
+    if ($user_list_exec && $user_word_step_exec) {
+      return "OK";
+    } else {
+      return "Error";
+    }
 	} else {
 		return "Error";
 	}
