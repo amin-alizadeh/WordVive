@@ -169,10 +169,11 @@ function logUserOut($conn, $token) {
 }
 
 function getPracticeList($conn, $userID, $n) {
-	$sql = "SELECT rndW.ID, Word, Translation, Description, Step FROM Words w "
-    . "INNER JOIN ("
-    . "SELECT ID FROM Words WHERE UserID=". $userID ." ORDER BY RAND() LIMIT 0, " . $n
-    . ") AS rndW ON rndW.ID = w.ID";
+	$sql = "SELECT rndW.ID, w.Word, w.Translation, w.Description, Step FROM Words w " .
+	
+    "INNER JOIN (" .
+    "SELECT ID FROM Words WHERE UserID=". $userID ." ORDER BY RAND() LIMIT 0, " . $n .
+    ") AS rndW ON rndW.ID = w.ID";
 	
 	$result = $conn->query($sql);
 	$message = array();

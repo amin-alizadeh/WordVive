@@ -55,7 +55,8 @@ function selectWordsList(){
   
 	$('#wordEditModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
 	$('#wordDeleteModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
-	
+	$('#shareListModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
+  
   $("#insertList").click(function () {
     var list = $("#listName").val().trim();
     if (word.length == 0) {
@@ -72,6 +73,10 @@ function selectWordsList(){
         }
       });
     }
+  });
+  
+  $("#shareList").click(function () {
+    $('#shareListModal').modal('show');
   });
   
 	$("#insert").click(function () {
@@ -264,4 +269,12 @@ function cancelEdit() {
 
 function cancelDelete() {
   if ($('#wordDeleteModal').modal('is active')) $('#wordDeleteModal').modal('hide');
+}
+
+function cancelShareList() {
+  $('#shareListModal').modal('hide');
+}
+
+function submitShareList() {
+  $('#shareListModal').modal('hide');
 }

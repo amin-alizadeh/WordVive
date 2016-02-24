@@ -63,9 +63,9 @@
     <h1 class="ui header">Lists</h1>
     <p>Create or pick a list</p>
 
-		<div class="ui two column stackable grid">	
-			<div class="three column row">
-				<div class="six wide column">
+		<div class="ui stackable grid">	
+			<div class="four column row">
+				<div class="five wide column">
 					<div class="field">
 						<div id="wordfield" class="ui fluid left icon corner labeled input">
 							<i class="list icon"></i>
@@ -77,12 +77,15 @@
 					</div>
 				</div>
         <div class="three wide column">
-					<button class="ui teal submit button" id="insertList">Insert</button>
-				</div>
-        <div class="seven wide column">
-					<select class="ui fluid dropdown" id="wordLists">
+          <button class="ui teal submit button" id="insertList">Insert</button>
+        </div>
+        <div class="five wide column">
+          <select class="ui fluid dropdown" id="wordLists">
           </select>
-				</div>
+        </div>
+        <div class="two wide column">
+          <button class="ui right labeled icon teal submit button" id="shareList">Share<i class="user icon"></i></button>
+        </div>
 			</div>
 			
 		</div>
@@ -144,32 +147,32 @@
   
 
 	<div class="ui text container">
-	<div class="ui form" id="wordTable">
-		<table class="ui celled table" id="wordlist">
-			<thead>
-				<tr>
-					<th class="four wide" id="thWord"><i class="book icon"></i>Word</th>
-					<th class="four wide" id="thTranslation"><i class="translate icon"></i>Translation</th>
-					<th class="four wide" id="thDescription"><i class="file text outline icon"></i>Description</th>
-					<th class="two wide" id="thStep"><i class="checkered flag icon"></i>Step</th>
-					<th class="two wide">
-            <select class="ui dropdown" id="wordsPerPage">
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="15">15</option>
-              <option value="20">20</option>
-            </select>
-          </th>
-				</tr>
-			</thead>
-			<tbody>
-			</tbody>
-			<tfoot>
-				<tr id="navBar">
-          <th colspan="5" id="pageNavigation"></th>
-				</tr>
-			</tfoot>
-		</table>	
+    <div class="ui form" id="wordTable">
+      <table class="ui celled table" id="wordlist">
+        <thead>
+          <tr>
+            <th class="four wide" id="thWord"><i class="book icon"></i>Word</th>
+            <th class="four wide" id="thTranslation"><i class="translate icon"></i>Translation</th>
+            <th class="four wide" id="thDescription"><i class="file text outline icon"></i>Description</th>
+            <th class="two wide" id="thStep"><i class="checkered flag icon"></i>Step</th>
+            <th class="two wide">
+              <select class="ui dropdown" id="wordsPerPage">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+              </select>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+        <tfoot>
+          <tr id="navBar">
+            <th colspan="5" id="pageNavigation"></th>
+          </tr>
+        </tfoot>
+      </table>	
     </div>
 	</div>
 	
@@ -266,6 +269,36 @@
 		</div>
 	</div>
   
+  <div class="ui small modal" id="shareListModal">
+		<i class="close icon"></i>
+		<div class="header" id="modalHeader">
+			Share
+		</div>
+		<div class="content">
+      <div class="description">
+        <div id="wordfield" class="ui fluid left icon corner labeled input">
+          <i class="user icon"></i>
+          <input type="text" id="shareUser" placeholder="Username or email">
+          <div class="ui corner label">
+            <i class="asterisk icon"></i>
+          </div>
+        </div>
+        <div class="ui bottom attached hidden warning message" id="shareListMessage">
+        </div>
+      </div>
+    </div>
+		<div class="actions">
+			<div class="ui black right labeled icon button" id="cancelDeleteWord" onclick="cancelShareList()">
+				Cancel
+				<i class="minus circle icon"></i>
+			</div>
+			
+			<div class="ui green right labeled icon button" id="submitDeleteWord" onclick="submitShareList()">
+				Share
+				<i class="user icon"></i>
+			</div>
+		</div>
+	</div>
   
     <div class="ui inverted vertical footer segment">
         <div class="ui center aligned container">
