@@ -273,8 +273,10 @@ function cancelDelete() {
 
 function cancelShareList() {
   $('#shareListModal').modal('hide');
+  $('#shareUser').val("");
 }
 
 function submitShareList() {
   $('#shareListModal').modal('hide');
+  
 }

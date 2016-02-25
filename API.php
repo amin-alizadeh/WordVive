@@ -57,7 +57,7 @@ function getUserInfo($conn, $userID) {
 function insertWord($conn, $userID, $word, $translation, $description, $list) {
 	$sql = "INSERT INTO `Words` (`UserID`, `Word`, `Translation`, `Description`) VALUES (?,?,?,?)";
   
-	$word_stmt =  $conn->prepare($sql);
+	$word_stmt = $conn->prepare($sql);
 	$word_stmt->bind_param("isss", $userID, $word, $translation, $description);
 	
 	if ($word_stmt->execute()) {
@@ -371,6 +371,29 @@ function insertList($conn, $userID, $list) {
   return $message;
 }
 
+function shareListUser($conn, $userID, $user, $listID){
+  $sql = "SELECT `ID` FROM `UserInfo` WHERE `email`=? OR `username`=?";
+  if (!($stmt = mysqli_prepare($conn, $sql))) {
+		echo "Could not prepare the statement";
+	}
+	if (!$stmt->bind_param('ss', $user, $user)) {
+		throw new \Exception("Database error: $stmt->errno - $stmt->error");
+	}
+
+	mysqli_stmt_execute($stmt);
+	mysqli_stmt_bind_result($stmt, $uid);
+	$stmt->store_result();
+	$num_result = $stmt->num_rows;
+	mysqli_stmt_fetch($stmt);
+  
+  
+  if($num_result == 1) {
+    $sql = 
+    //$uid;
+  }
+  mysqli_stmt_close($stmt);
+}
+
 $message = array();
 if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["username"]) && isset($_POST["password"])) {
 	$message = checkLogin ($conn, $_POST["username"], $_POST["password"], $passwordSalt);
@@ -448,6 +471,9 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				break;
       case "listlist":
 				$message["lists"] = getListList($conn, $userID, $_GET["first"], $_GET["last"]);
+				break;
+      case "sharelistuser":
+				$message["status"] = shareListUser($conn, $userID, $_GET["user"], $_GET["list"]);
 				break;
       
 		}
