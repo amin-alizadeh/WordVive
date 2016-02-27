@@ -372,6 +372,7 @@ function insertList($conn, $userID, $list) {
 }
 
 function shareListUser($conn, $userID, $user, $listID){
+  $message = "";
   $sql = "SELECT `ID` FROM `UserInfo` WHERE `email`=? OR `username`=?";
   if (!($stmt = mysqli_prepare($conn, $sql))) {
 		echo "Could not prepare the statement";
@@ -386,12 +387,28 @@ function shareListUser($conn, $userID, $user, $listID){
 	$num_result = $stmt->num_rows;
 	mysqli_stmt_fetch($stmt);
   
-  
   if($num_result == 1) {
-    $sql = 
-    //$uid;
+    $sql = "INSERT INTO `UserList`(`UserID`, `ListID`) VALUES (?,?)";
+    if (($stmt_list = mysqli_prepare($conn, $sql))) {
+      if (!$stmt_list->bind_param('ii', $uid, $listID)) {
+        throw new \Exception("Database error: $stmt->errno - $stmt->error");
+      }
+      if ($stmt_list->execute()) {
+        $message = "OK";
+      } else {
+        $message = "List is already assigned or something went wrong.";
+      }
+    } else {
+      $message = "Failed";
+    }
+    mysqli_stmt_close($stmt_list);
+  } else if ($num_result == 0) {
+    $message = "User not found";
+  } else {
+    $message = "There was a mismatch";
   }
   mysqli_stmt_close($stmt);
+  return $message;
 }
 
 $message = array();
@@ -473,7 +490,7 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				$message["lists"] = getListList($conn, $userID, $_GET["first"], $_GET["last"]);
 				break;
       case "sharelistuser":
-				$message["status"] = shareListUser($conn, $userID, $_GET["user"], $_GET["list"]);
+				$message["status"] = shareListUser($conn, $userID, $_POST["user"], $_POST["list"]);
 				break;
       
 		}

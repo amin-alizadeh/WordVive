@@ -76,6 +76,9 @@ function selectWordsList(){
   });
   
   $("#shareList").click(function () {
+    $('#shareListMessage').addClass('hidden');
+    $('#shareListMessage').html('');
+    $('#shareUser').val('');
     $('#shareListModal').modal('show');
   });
   
@@ -257,7 +260,6 @@ function submitDelete() {
 		$('#wordDeleteModal').modal('hide');
 		var res = jQuery.parseJSON(data);
 		if (res.status == "OK") {
-			console.log("OK");
       jumpToPage(currentPage);
 		}
 	});
@@ -277,6 +279,22 @@ function cancelShareList() {
 }
 
 function submitShareList() {
-  $('#shareListModal').modal('hide');
+  var usr = $('#shareUser').val().trim().toLowerCase();
+  var list = parseInt($('#wordLists').val());
+  $('#submitShareList').addClass('loading');
+  $('#cancelShareList').addClass('loading');
+  $('#shareUserField').addClass('loading');
+  $.post("API.php?token=" + token + "&action=sharelistuser", {user:usr, list: list}, function (data) {
+    $('#submitShareList').removeClass('loading');
+    $('#cancelShareList').removeClass('loading');
+    $('#shareUserField').removeClass('loading');
+    var res = jQuery.parseJSON(data);
+		if (res.status == "OK") {
+      $('#shareListModal').modal('hide');
+    } else {
+      $('#shareListMessage').html(res.status);
+      $('#shareListMessage').removeClass('hidden');
+    }
+  });
   
 }
