@@ -2,6 +2,7 @@ var wordsPerPage = 10;
 var paginationStart = '<div class="ui right floated pagination menu">';
 var paginationEnd = '</div>';
 var pageJump = '<a class="item" onclick="jumpToPage(%n%)" id="pgJump%n%">%n%</a>';
+var pageJumpDisabled = '<a class="disabled item" onclick="jumpToPage(%n%)" id="pgJump%n%">%n%</a>';
 var previousPage = '<a class="icon item" onclick="jumpToPreviousPage()"><i class="left chevron icon"></i></a>';
 var nextPage = '<a class="icon item" onclick="jumpToNextPage()"><i class="right chevron icon"></i></a>';
 var currentPage = 0;
@@ -154,7 +155,11 @@ function paginationList(numberOfPages, jump) {
 			for (var i = 1; i <= numberOfPages; i++) {
         //console.log("page: " + i + " of " + numberOfPages + " to " + jump + " then " + ((i < 2) || ((numberOfPages - i) < 2) || (Math.abs(jump - i) < 2)));
         if ((i < 2) || ((numberOfPages - i) < 2) || (Math.abs(jump - i) < 2)) {
-          pageNumbers += pageJump.replace("%n%", i).replace("%n%", i).replace("%n%", i);
+          if (i == jump) {
+            pageNumbers += pageJumpDisabled.replace("%n%", i).replace("%n%", i).replace("%n%", i);
+          }else {
+            pageNumbers += pageJump.replace("%n%", i).replace("%n%", i).replace("%n%", i);
+          }
           paginationCorrectionAdded = false;
         } else if (!paginationCorrectionAdded){
           pageNumbers += '<a class="item">:</a>';

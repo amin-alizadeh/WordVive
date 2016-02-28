@@ -4,6 +4,7 @@ require_once ('connect.php'); //credentials.php is required in connect.php
 require_once ('login.php'); //lib/random/random.php is required in login.php
 require_once 'PHPMailer/PHPMailerAutoload.php';
 require_once ('helper/verificationhelper.php');
+require_once ('helper/fetch_rows.php');
 
 function getUserFromToken($conn, $token) {
 	$uID = null;
@@ -119,27 +120,16 @@ function deleteWord($conn, $userID, $id) {
 }
 
 function getWordsList($conn, $userID, $list, $first, $last) {
-  $sql = "SELECT w.ID, w.Word, w.Translation, w.Description, CASE WHEN uws.Step IS NULL THEN 0 ELSE uws.Step END AS Step ".
+  $sql = "SELECT w.ID, w.Word, w.Translation, w.Description, CASE WHEN uws.Step IS NULL THEN 1 ELSE uws.Step END AS Step ".
   "FROM UserInfo AS usr ".
   "INNER JOIN UserList AS ul  ON usr.ID = ul.UserID ".
   "INNER JOIN List AS l ON l.ListID=ul.ListID ".
   "INNER JOIN WordList AS wl ON wl.ListID = l.ListID ".
   "INNER JOIN Words AS w ON w.ID = wl.WordID ".
   "LEFT OUTER JOIN UserWordStep AS uws ON (uws.WordID=w.ID AND uws.UserID=usr.ID) ".
-  "WHERE usr.ID=" . $userID . " AND ul.ListID = " . $list . " ORDER BY InsertTime DESC LIMIT " . 
-  $first . ", " . ($last - $first);
+  "WHERE usr.ID=? AND ul.ListID=? ORDER BY InsertTime DESC LIMIT ?,?"; 
   
-	/*$sql = "SELECT ID, Word, Translation, Description, Step FROM Words " .
-			"WHERE UserID = " . $userID . " ORDER BY InsertTime DESC LIMIT " . $first . ", " . ($last - $first);
-  */
-	$result = $conn->query($sql);
-	$message = array();
-	if ($result->num_rows > 0) {
-		while($row = $result->fetch_assoc()) {
-			$message[] = $row;
-		}
-	}
-	return $message;
+	return fetchRows($conn, $sql, 'iiii', $userID, $list, $first, ($last - $first));
 }
 
 function getWordsCount($conn, $list, $userID) {
@@ -168,48 +158,56 @@ function logUserOut($conn, $token) {
 	}
 }
 
-function getPracticeList($conn, $userID, $n) {
-	$sql = "SELECT rndW.ID, w.Word, w.Translation, w.Description, Step FROM Words w " .
-	
-    "INNER JOIN (" .
-    "SELECT ID FROM Words WHERE UserID=". $userID ." ORDER BY RAND() LIMIT 0, " . $n .
-    ") AS rndW ON rndW.ID = w.ID";
-	
-	$result = $conn->query($sql);
-	$message = array();
-	if ($result->num_rows > 0) {
-		while($row = $result->fetch_assoc()) {
-			$message[] = $row;
-		}
-	}
-	return $message;
-	
+function getPracticeList($conn, $userID, $n, $list = -1) {
+	$sql = "SELECT w.ID, w.Word, w.Translation, w.Description, rndW.Step 
+  FROM Words AS w
+  INNER JOIN (
+      SELECT wl.WordID, ul.UserID, ul.ListID, CASE WHEN uws.Step IS NULL THEN 1 ELSE uws.Step END AS Step
+      FROM UserList ul
+      INNER JOIN WordList wl ON (ul.UserID=? AND ((?=-1 AND ul.ListID = wl.ListID) OR (?!=-1 AND ul.ListID=?)))
+      LEFT OUTER JOIN UserWordStep AS uws ON (uws.Step < uws.GoalStep And uws.WordID=wl.WordID AND uws.UserID=ul.UserID)
+      ORDER BY RAND() LIMIT 0, ?
+  ) AS rndW ON w.ID=rndW.WordID";
+  
+	return fetchRows($conn, $sql, 'iiiii', $userID, $list, $list, $list, $n);
 }
 
 function submitPractice($conn, $userID, $cr, $incr) {
-	$sqlcr = "UPDATE Words SET Step = Step + 1 WHERE UserID=". $userID ." AND ID IN (". $cr .")";
-	$sqlincr = "UPDATE Words SET Step = 1 WHERE UserID=". $userID ." AND ID IN (". $incr .")";
-	$crres = false;
-	$incrres = false;
-	
-	if (strlen($cr) > 0) {
-		if ($conn->query($sqlcr) === TRUE) {
-			$crres = true;
-		}
-	} else {
-		$crres = true;
-	}
-	
-	if (strlen($incr) > 0) {
-		if ($conn->query($sqlincr) === TRUE) {
-			$incrres = true;
-		}
-	} else {
-		$incrres = true;
-	}
-	
-	return ($crres and $incrres);
-	
+  $sql = "INSERT INTO UserWordStep (WordID, UserID) ".
+  "SELECT uws.WordID, ? ".
+  "FROM UserWordStep uws ".
+  "LEFT OUTER JOIN UserWordStep uwsOrg ON uws.WordID=uwsOrg.WordID AND uwsOrg.UserID=? ".
+  "WHERE (uws.WordID IN (". $cr .") OR uws.WordID IN (". $incr .")) AND uwsOrg.UserID IS NULL";
+  $missing_steps_stmt =  $conn->prepare($sql);
+  $missing_steps_stmt->bind_param("ii", $userID, $userID);
+  if ($missing_steps_stmt->execute()) {
+    $sqlcr = "UPDATE UserWordStep SET Step=Step+1, LastCheckTime=CURRENT_TIMESTAMP WHERE UserID=? AND WordID IN (". $cr .")";
+    $sqlincr = "UPDATE UserWordStep SET Step=1, LastCheckTime=CURRENT_TIMESTAMP WHERE UserID=? AND WordID IN (". $incr .")";
+    $crres = false;
+    $incrres = false;
+    
+    if (strlen($cr) > 0) {
+      $cr_stmt = $conn->prepare($sqlcr);
+      $cr_stmt->bind_param("i", $userID);
+      if ($cr_stmt->execute()) {
+        $crres = true;
+      }
+    } else {
+      $crres = true;
+    }
+    
+    if (strlen($incr) > 0) {
+      $incr_stmt = $conn->prepare($sqlincr);
+      $incr_stmt->bind_param("i", $userID);
+      if ($incr_stmt->execute()) {
+        $incrres = true;
+      }
+    } else {
+      $incrres = true;
+    }
+    return ($crres and $incrres);
+  }
+	return false;
 }
 
 function registerNewUser($conn, $username, $password, $firstname, $lastname, $email, $terms, $emailHost, $emailPort, $emailAddress, $emailPassword, $passwordSalt) {
@@ -323,14 +321,6 @@ function sendVerificationEmail($conn, $userID, $code, $verCode, $identifier, $em
 
 function getListList($conn, $userID, $first=0, $last=10) {
   $cnt = $last - $first;
-  /*
-  SELECT `usr`.`ID`,`l`.`ListID`, `l`.`ListName` 
-  FROM `UserInfo` AS `usr` 
-  INNER JOIN `UserList` AS `ul` ON `ul`.`UserID` = `usr`.`ID`
-  INNER JOIN `List` AS `l` ON `l`.`ListID`=`ul`.`ListID` 
-  WHERE `usr`.`ID`=1
-  ORDER BY `ListCreatedOn` DESC LIMIT 0,10
-  */
   $sql = "SELECT `l`.`ListID`, `l`.`ListName` FROM `UserInfo` AS `usr` INNER JOIN `UserList` AS `ul` ON `ul`.`UserID` = `usr`.`ID` ".
       "INNER JOIN `List` AS `l` ON `l`.`ListID`=`ul`.`ListID` ".
       "WHERE `usr`.`ID`=". intval($userID) . " ORDER BY `ListCreatedOn` DESC LIMIT " . intval($first) ."," . intval($cnt);
