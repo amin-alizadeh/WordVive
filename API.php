@@ -56,41 +56,44 @@ function getUserInfo($conn, $userID) {
 }
 
 function insertWord($conn, $userID, $word, $translation, $description, $list) {
-	$sql = "INSERT INTO `Words` (`UserID`, `Word`, `Translation`, `Description`) VALUES (?,?,?,?)";
+	$sql = "INSERT INTO `Words` (`UserID`, `ListID`, `Word`, `Translation`, `Description`) VALUES (?,?,?,?,?)";
   
 	$word_stmt = $conn->prepare($sql);
-	$word_stmt->bind_param("isss", $userID, $word, $translation, $description);
-	
+	$word_stmt->bind_param("iisss", $userID, $list, $word, $translation, $description);
+	$msg = array();
+  
 	if ($word_stmt->execute()) {
     $sql = "SELECT LAST_INSERT_ID() AS WordID";
     $list_stmt =  $conn->prepare($sql);
-    $user_list_exec = false;
     $user_word_step_exec = false;
     if ($list_stmt->execute()) {
       mysqli_stmt_bind_result($list_stmt, $wordID);
       $list_stmt->store_result();
       $num_result = $list_stmt->num_rows;
       mysqli_stmt_fetch($list_stmt);
+      $msg["WordID"] = $wordID;
+      /*
       if($num_result == 1) {
         $sql = "INSERT INTO `WordList`(`ListID`, `WordID`) VALUES (?,?)";
         $stmt_user_list = $conn->prepare($sql);
         $stmt_user_list->bind_param("ii", $list, $wordID);
         $user_list_exec = $stmt_user_list->execute();
       }
+      */
       $sql = "INSERT INTO `UserWordStep`(`UserID`, `WordID`) VALUES (?,?)";
       $stmt_user_word_step = $conn->prepare($sql);
       $stmt_user_word_step->bind_param("ii", $userID, $wordID);
       $user_word_step_exec = $stmt_user_word_step->execute();
     }
-    if ($user_list_exec && $user_word_step_exec) {
-      return "OK";
+    if ($user_word_step_exec) {
+      $msg["status"] = "OK";
     } else {
-      return "Error";
+      $msg["status"] = "Error";
     }
 	} else {
-		return "Error";
+		$msg["status"] = "Error";
 	}
-
+  return $msg;
 }
 
 function updateWord($conn, $userID, $id, $word, $translation, $description) {
@@ -119,33 +122,32 @@ function deleteWord($conn, $userID, $id) {
 	}
 }
 
-function getWordsList($conn, $userID, $list, $first, $last) {
+function getWordsList($conn, $userID, $list, $first, $last, $filter='%') {
   $sql = "SELECT w.ID, w.Word, w.Translation, w.Description, CASE WHEN uws.Step IS NULL THEN 1 ELSE uws.Step END AS Step ".
   "FROM UserInfo AS usr ".
-  "INNER JOIN UserList AS ul  ON usr.ID = ul.UserID ".
+  "INNER JOIN UserList AS ul  ON usr.ID = ul.UserID AND usr.ID=? AND ul.ListID=? ".
   "INNER JOIN List AS l ON l.ListID=ul.ListID ".
-  "INNER JOIN WordList AS wl ON wl.ListID = l.ListID ".
-  "INNER JOIN Words AS w ON w.ID = wl.WordID ".
+  /*"INNER JOIN WordList AS wl ON wl.ListID = l.ListID ".
+  "INNER JOIN Words AS w ON w.ID = wl.WordID ".*/
+  "INNER JOIN Words AS w ON w.ListID = l.ListID ".
   "LEFT OUTER JOIN UserWordStep AS uws ON (uws.WordID=w.ID AND uws.UserID=usr.ID) ".
-  "WHERE usr.ID=? AND ul.ListID=? ORDER BY InsertTime DESC LIMIT ?,?"; 
+  "WHERE (w.Word LIKE ?) ".
+  "ORDER BY InsertTime DESC LIMIT ?,?"; 
   
-	return fetchRows($conn, $sql, 'iiii', $userID, $list, $first, ($last - $first));
+	return fetchRows($conn, $sql, 'iisii', $userID, $list, $filter, $first, ($last - $first));
+  //return fetchRows($conn, $sql, 'iiii', $userID, $list, $first, ($last - $first));
 }
 
-function getWordsCount($conn, $list, $userID) {
-  //$sql = "SELECT COUNT(Word) AS wordcount FROM Words WHERE UserID = " . $userID;
+function getWordsCount($conn, $list, $userID, $filter = '%') {
   $sql="SELECT COUNT(w.Word) AS wordcount ".
     "FROM Words AS w ".
-    "INNER JOIN WordList AS wl ON wl.WordID = w.ID AND wl.ListID = ". $list ." ".
-    "INNER JOIN List AS l ON l.ListID = wl.ListID  ".
-    "INNER JOIN UserList AS ul ON ul.ListID = l.ListID AND ul.UserID=" . $userID;
+    /*"INNER JOIN WordList AS wl ON wl.WordID = w.ID AND wl.ListID = ". $list ." ".*/
+    "INNER JOIN List AS l ON w.ListID = ? AND w.Word LIKE ? AND l.ListID = w.ListID ".
+    "INNER JOIN UserList AS ul ON ul.ListID = l.ListID AND ul.UserID=?";
   
-	$result = $conn->query($sql);
-	$message = "0";
-	if ($result->num_rows > 0) {
-		$row = $result->fetch_assoc();
-		$message = $row["wordcount"];
-	}
+	$row = fetchRows($conn, $sql, 'isi', $list, $filter, $userID);
+  
+  $message = $row[0]["wordcount"];
 	return $message;
 }
 
@@ -425,7 +427,7 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				$translation = isset($_POST["translation"]) ? $_POST["translation"] : "";
 				$description = isset($_POST["description"]) ? $_POST["description"] : "";
         $list = $_POST["list"];
-				$message["status"] = insertWord($conn, $userID, $word, $translation, $description, $list);
+				$message = insertWord($conn, $userID, $word, $translation, $description, $list);
 				break;
 			case "get":
 				$message["action"] = "check";
@@ -434,7 +436,11 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				$message["user"] = getUserInfo($conn, $userID);
 			break;
 			case "wordlist":
-				$message["words"] = getWordsList($conn, $userID, $_GET["list"], $_GET["first"], $_GET["last"]);
+        $filter = "%";
+        if (isset($_POST["filter"])) {
+          $filter = $_POST["filter"];
+        }
+				$message["words"] = getWordsList($conn, $userID, $_POST["list"], $_POST["first"], $_POST["last"], $filter);
 				break;
 			case "wordcount":
 				$message["wordcount"] = getWordsCount($conn, $_GET["list"], $userID);
