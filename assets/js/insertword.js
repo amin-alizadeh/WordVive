@@ -2,9 +2,10 @@ var wordsPerPage = 10;
 var paginationStart = '<div class="ui right floated pagination menu">';
 var paginationEnd = '</div>';
 var pageJump = '<a class="item" onclick="jumpToPage(%n%)" id="pgJump%n%">%n%</a>';
+var pageJumpDisabled = '<a class="disabled item" onclick="jumpToPage(%n%)" id="pgJump%n%">%n%</a>';
 var previousPage = '<a class="icon item" onclick="jumpToPreviousPage()"><i class="left chevron icon"></i></a>';
 var nextPage = '<a class="icon item" onclick="jumpToNextPage()"><i class="right chevron icon"></i></a>';
-var currentPage = 0;
+var currentPage = 1;
 var numberOfPages = 1;
 var wordSettings = '<button class="circular ui tiny teal icon button"><i class="teal edit icon"></i></button>'+
 					'<button class="circular ui tiny red icon button"><i class="red remove icon"></i></button>';
@@ -14,6 +15,13 @@ var wordsList = [];
 var listList = [];
 var wordEditID = -1;
 var wordDeleteID = -1;
+
+if (localStorage.hasOwnProperty("currentPage")) {
+  currentPage = localStorage.currentPage;
+}
+if (localStorage.hasOwnProperty("wordsPerPage")) {
+  wordsPerPage = localStorage.wordsPerPage;
+}
 
 $(document).ready(function() {
   //Fetch the word lists:
@@ -28,21 +36,36 @@ function getWordLists(firstL, lastL) {
     var res = jQuery.parseJSON(data);
 		listList = res.lists;
     $('#wordLists').html("");
+    
+    var listExists = false;
+    var selectedList = -1;
+    if (localStorage.hasOwnProperty("selectedList")) {
+      selectedList = localStorage.selectedList;
+    }
+    
     for (var i = 0; i < listList.length; i++) {
       $('#wordLists').
       append($("<option></option>").
       attr("value", listList[i].ListID).
       text(listList[i].ListName));
+      if (selectedList == listList[i].ListID) {
+        listExists = true;
+      }
+    }
+    
+    if (listExists) {
+      $('#wordLists').val(selectedList);
     }
     
     selectWordsList();
-    populateWords(wordsPerPage, 1);
+    populateWords(wordsPerPage, currentPage);
   });
 }
 
 function selectWordsList(){
   $('#wordLists').change(function() {
     var listID = parseInt($('#wordLists').val());
+    localStorage.selectedList = listID;
     populateWords(wordsPerPage, 1);
   });
     
@@ -130,6 +153,7 @@ function selectWordsList(){
 }
 function populateWords(setWordsPerPage, jump) {
   wordsPerPage = setWordsPerPage;
+  localStorage.wordsPerPage = wordsPerPage;
 	var tbl = document.getElementById("wordlist");
 	$("#wordTable").addClass("loading");
   var list = $('#wordLists').val();
@@ -154,7 +178,11 @@ function paginationList(numberOfPages, jump) {
 			for (var i = 1; i <= numberOfPages; i++) {
         //console.log("page: " + i + " of " + numberOfPages + " to " + jump + " then " + ((i < 2) || ((numberOfPages - i) < 2) || (Math.abs(jump - i) < 2)));
         if ((i < 2) || ((numberOfPages - i) < 2) || (Math.abs(jump - i) < 2)) {
-          pageNumbers += pageJump.replace("%n%", i).replace("%n%", i).replace("%n%", i);
+          if (i == jump) {
+            pageNumbers += pageJumpDisabled.replace("%n%", i).replace("%n%", i).replace("%n%", i);
+          }else {
+            pageNumbers += pageJump.replace("%n%", i).replace("%n%", i).replace("%n%", i);
+          }
           paginationCorrectionAdded = false;
         } else if (!paginationCorrectionAdded){
           pageNumbers += '<a class="item">:</a>';
@@ -169,7 +197,7 @@ function paginationList(numberOfPages, jump) {
 function wordsListPagination(firstW, lastW) {	
 	$("#wordTable").addClass("loading");
   var list = $('#wordLists').val();
-	$.get("API.php?token=" + token + "&action=wordlist&list=" + list +"&first=" + firstW + "&last=" + lastW, function (data) {
+	$.post("API.php?token=" + token + "&action=wordlist", {list: list ,first: firstW, last: lastW}, function (data) {
 		$("#wordTable").removeClass("loading");
 		var res = jQuery.parseJSON(data);
 		wordsList = res.words;
@@ -204,7 +232,9 @@ function jumpToPage(n) {
 	if (n > 0 && n <= numberOfPages) {
 		if (currentPage > 0) $("#pgJump" + currentPage).removeClass("disabled");
 		currentPage = n;
+    localStorage.currentPage = currentPage;
 		$("#pgJump" + currentPage).addClass("disabled");
+    console.log(n);
 		wordsListPagination((n - 1) * wordsPerPage, n * wordsPerPage);
     paginationList(numberOfPages, n);
 	}
@@ -237,8 +267,9 @@ function submitEdit() {
 	$("#modalDescription").addClass("loading");
 	$("#submitEditWord").addClass("loading");
 	$("#cancelEditWord").addClass("loading");
-	$.post("API.php?token=" + token + "&action=updateword", {word:$('#editword').val(), id:wordsList[wordEditID].ID, 
-	translation:$('#edittranslation').val(), description:$('#editdescription').val()}, function (data) {
+	$.post("API.php?token=" + token + "&action=updateword", 
+  {word:$('#editword').val().trim(), id:wordsList[wordEditID].ID, 
+	translation:$('#edittranslation').val().trim(), description:$('#editdescription').val().trim()}, function (data) {
 		$("#modalDescription").removeClass("loading");
 		$("#submitEditWord").removeClass("loading");
 		$("#cancelEditWord").removeClass("loading");
