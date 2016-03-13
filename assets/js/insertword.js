@@ -150,6 +150,16 @@ function selectWordsList(){
 		}
 		
 	});
+  
+  $("#searchWordSubmit").click(function () {
+    jumpToPage(1);
+  });
+  
+  $("#clearSearchWord").click(function () {
+    $("#searchWord").val('');
+    jumpToPage(1);
+  });
+  
 }
 function populateWords(setWordsPerPage, jump) {
   wordsPerPage = setWordsPerPage;
@@ -170,8 +180,15 @@ function jumpToPage(n) {
     var list = $('#wordLists').val();
     var firstW = (n - 1) * wordsPerPage;
     var lastW = n * wordsPerPage
-    $.post("API.php?token=" + token + "&action=wordlist", {list: list ,first: firstW, last: lastW}, function (data) {
+    var filter = $("#searchWord").val().trim().split("*").join("%");
+    if (filter.length<1){
+      filter = "%";
+    }
+    $.post("API.php?token=" + token + "&action=wordlist", 
+    {list: list ,first: firstW, last: lastW, filter: filter}, 
+    function (data) {
       $("#wordTable").removeClass("loading");
+      //$("#searchWord").val('');
       var res = jQuery.parseJSON(data);
       wordsList = res.words;
       var wordsCount = res.wordcount;

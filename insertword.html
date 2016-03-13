@@ -147,6 +147,32 @@
   
 
 	<div class="ui text container">
+    <div class="ui three column stackable grid">	
+      <div class="three column row">
+        <div class="ten wide column">
+          <div class="field">
+            <div class="ui fluid left icon input">
+              <i class="search icon"></i>
+              <input type="text" id="searchWord" placeholder="Search Word">
+            </div>
+          </div>
+        </div>
+        <div class="three wide column">
+          <button class="ui teal right labeled icon submit button" id="searchWordSubmit">
+            Search<i class="search icon"></i>
+          </button>
+        </div>
+        <div class="three wide column">
+          <button class="ui olive right labeled icon submit button" id="clearSearchWord">
+            Clear<i class="minus circle icon"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <h4 class="ui horizontal divider">
+    </h4>
+      
     <div class="ui form" id="wordTable">
       <table class="ui celled table" id="wordlist">
         <thead>

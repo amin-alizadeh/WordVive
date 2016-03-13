@@ -427,7 +427,7 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
         if (isset($_POST["filter"])) {
           $filter = $_POST["filter"];
         }
-        $message["wordcount"] = getWordsCount($conn, $_POST["list"], $userID);
+        $message["wordcount"] = getWordsCount($conn, $_POST["list"], $userID, $filter);
 				$message["words"] = getWordsList($conn, $userID, $_POST["list"], $_POST["first"], $_POST["last"], $filter);
 				break;
 			case "wordcount":
