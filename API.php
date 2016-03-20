@@ -55,10 +55,10 @@ function getUserInfo($conn, $userID) {
 	}
 }
 
-function insertWord($conn, $userID, $word, $translation, $description, $list) {
-	$sql = "INSERT INTO `Words` (`UserID`, `ListID`, `Word`, `Translation`, `Description`) VALUES (?,?,?,?,?)";
+function insertWord($conn, $userID, $word, $translation, $description, $wordBase, $list) {
+	$sql = "INSERT INTO `Words` (`UserID`, `ListID`, `Word`, `Translation`, `Description`, `WordBase`) VALUES (?,?,?,?,?,?)";
 	$msg = array();
-	if (insertRow($conn, $sql, "iisss", $userID, $list, $word, $translation, $description)) {
+	if (insertRow($conn, $sql, "iissss", $userID, $list, $word, $translation, $description, $wordBase)) {
     $sql = "SELECT LAST_INSERT_ID() AS WordID";
     $wordIDRow = fetchRows($conn, $sql);
     $wordID = $wordIDRow[0]["WordID"];
@@ -79,11 +79,11 @@ function insertWord($conn, $userID, $word, $translation, $description, $list) {
   return $msg;
 }
 
-function updateWord($conn, $userID, $id, $word, $translation, $description) {
-	$sql = "UPDATE `Words` SET `Word`=?,`Translation`=?,`Description`=? WHERE `ID`=? AND `UserID`=?";
+function updateWord($conn, $userID, $id, $word, $translation, $description, $wordBase) {
+	$sql = "UPDATE `Words` SET `Word`=?,`Translation`=?,`Description`=?, `WordBase`=? WHERE `ID`=? AND `UserID`=?";
   
 	$word_stmt =  $conn->prepare($sql);
-	$word_stmt->bind_param("sssii", $word, $translation, $description, $id, $userID);
+	$word_stmt->bind_param("ssssii", $word, $translation, $description, $wordBase, $id, $userID);
 	
 	if ($word_stmt->execute()) {
 		return "OK";
@@ -411,10 +411,11 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 		switch($_GET["action"]) {
 			case "insert":
 				$word = isset($_POST["word"]) ? $_POST["word"] : "";
+        $wordBase = isset($_POST["wordbase"]) ? $_POST["wordbase"] : "";
 				$translation = isset($_POST["translation"]) ? $_POST["translation"] : "";
 				$description = isset($_POST["description"]) ? $_POST["description"] : "";
         $list = $_POST["list"];
-				$message = insertWord($conn, $userID, $word, $translation, $description, $list);
+				$message = insertWord($conn, $userID, $word, $translation, $description, $wordBase, $list);
 				break;
 			case "get":
 				$message["action"] = "check";
@@ -458,9 +459,10 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 			case "updateword":
 				$wid = isset($_POST["id"]) ? $_POST["id"] : "";
 				$word = isset($_POST["word"]) ? $_POST["word"] : "";
+        $wordBase = isset($_POST["wordbase"]) ? $_POST["wordbase"] : "";
 				$translation = isset($_POST["translation"]) ? $_POST["translation"] : "";
 				$description = isset($_POST["description"]) ? $_POST["description"] : "";
-				$message["status"] = updateWord($conn, $userID, $wid, $word, $translation, $description);
+				$message["status"] = updateWord($conn, $userID, $wid, $word, $translation, $description, $wordBase);
 				break;
       case "deleteword":
 				$wid = isset($_POST["id"]) ? $_POST["id"] : "";

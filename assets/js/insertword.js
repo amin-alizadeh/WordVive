@@ -107,6 +107,7 @@ function selectWordsList(){
   
 	$("#insert").click(function () {
 		var word = $("#word").val().trim();
+    var wordBase = word.toLowerCase().split(' ').join('').split('+').join('').split('/').join('');
 		var translation = $("#translation").val().trim();
 		var description = $("#description").val().trim();
 		if (word.length == 0 && translation.length == 0) {
@@ -124,7 +125,9 @@ function selectWordsList(){
 			$("#insert").addClass("loading");
       
 			var list = $('#wordLists').val();
-			$.post("API.php?token=" + token + "&action=insert", {word:word, translation:translation, description:description, list:list}, function (data) {
+			$.post("API.php?token=" + token + "&action=insert", 
+      {word:word, translation:translation, description:description, list:list, wordbase:wordBase}, 
+      function (data) {
 				$("#insert").removeClass("loading");
 				var res = jQuery.parseJSON(data);
 				if (res.status == "OK") {
@@ -277,9 +280,13 @@ function submitEdit() {
 	$("#modalDescription").addClass("loading");
 	$("#submitEditWord").addClass("loading");
 	$("#cancelEditWord").addClass("loading");
+  var word = $('#editword').val().trim();
+  var wordBase = word.toLowerCase().split(' ').join('').split('+').join('').split('/').join('');
 	$.post("API.php?token=" + token + "&action=updateword", 
-  {word:$('#editword').val().trim(), id:wordsList[wordEditID].ID, 
-	translation:$('#edittranslation').val().trim(), description:$('#editdescription').val().trim()}, function (data) {
+  {word:word, id:wordsList[wordEditID].ID, 
+	translation:$('#edittranslation').val().trim(), 
+  description:$('#editdescription').val().trim(), wordbase:wordBase}, 
+  function (data) {
 		$("#modalDescription").removeClass("loading");
 		$("#submitEditWord").removeClass("loading");
 		$("#cancelEditWord").removeClass("loading");
