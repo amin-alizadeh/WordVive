@@ -26,15 +26,16 @@ if (localStorage.hasOwnProperty("wordsPerPage")) {
 $(document).ready(function() {
   //Fetch the word lists:
   var firstL = 0;
-  var lastL = 10;
+  var lastL = 50;
   getWordLists(firstL, lastL);
   
 });
 
 function getWordLists(firstL, lastL) {
+  
   $.get("API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
     var res = jQuery.parseJSON(data);
-		listList = res.lists;
+		listList = res.results;
     $('#wordLists').html("");
     
     var listExists = false;
@@ -46,9 +47,9 @@ function getWordLists(firstL, lastL) {
     for (var i = 0; i < listList.length; i++) {
       $('#wordLists').
       append($("<option></option>").
-      attr("value", listList[i].ListID).
-      text(listList[i].ListName));
-      if (selectedList == listList[i].ListID) {
+      attr("value", listList[i].value).
+      text(listList[i].name));
+      if (selectedList == listList[i].value) {
         listExists = true;
       }
     }
@@ -56,7 +57,7 @@ function getWordLists(firstL, lastL) {
     if (listExists) {
       $('#wordLists').val(selectedList);
     }
-    
+    $('#wordLists').dropdown();
     selectWordsList();
     populateWords(wordsPerPage, currentPage);
   });
@@ -188,7 +189,7 @@ function jumpToPage(n) {
       filter = "%";
     }
     $.post("API.php?token=" + token + "&action=wordlist", 
-    {list: list ,first: firstW, last: lastW, filter: filter}, 
+    {lists: list ,first: firstW, last: lastW, filter: filter}, 
     function (data) {
       $("#wordTable").removeClass("loading");
       //$("#searchWord").val('');

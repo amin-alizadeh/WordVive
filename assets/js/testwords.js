@@ -1,7 +1,11 @@
 var practiceList = [];
+var listList = [];
 var wordMainDiv = '<i class="book icon"></i>';
 var wordTranslationDiv = '<i class="translate icon"></i>';
 var wordDescriptionDiv = '<i class="file text outline icon"></i>';
+var firstL = 0;
+var lastL = 50;
+
 
 if (localStorage.hasOwnProperty("practicelist") && localStorage.hasOwnProperty("practicelistInventory")) {
 	practiceList = jQuery.parseJSON(localStorage.practicelist);
@@ -34,10 +38,29 @@ function checkWordNumber() {
 }
 
 $(document).ready(function() {
+  
+
+$.get("API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
+  var res = jQuery.parseJSON(data);
+  listList = res.results;
+  for (var i = 0; i < listList.length; i++) {
+    $('#listItems').append($("<div></div>").
+      attr("data-value", listList[i].value).
+      text(listList[i].name).addClass("item"));
+  }
+  $('#listSelection').dropdown();
+  $('#clearListSelection') .on('click', function() {
+    $('#listSelection').dropdown('restore defaults');
+  });
+  
+});
+
 	$('.ui.small.modal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
 	$("#start").click(function(){
 		$("#start").addClass("loading");
-		$.get("API.php?token=" + token + "&action=practicelist&count=" + $('#wordnumber').val(), function (data) {
+    var lists = $('#lists').val().split(',');
+		//$.get("API.php?token=" + token + "&action=practicelist&count=" + $('#wordnumber').val(), function (data) {
+    $.post("API.php?token=" + token + "&action=practicelist&count=" + $('#wordnumber').val(), {lists:lists}, function (data) {
 			$("#start").removeClass("loading");
 			var inventory = "";
 			/*

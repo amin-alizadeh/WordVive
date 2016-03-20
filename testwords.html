@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
     <!-- Site Properities -->
-    <title>Test Words - Insert</title>
+    <title>Practice Words</title>
   <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
 	<link rel="stylesheet" type="text/css" href="dist/semantic.css">
 	
@@ -47,19 +47,37 @@
     <div class="ui main text container">
 		
 		<div class="ui stackable grid" id="startPractice" style="display:block">	
-			<div class="two column row">
-				<div class="six wide column">
+      
+      <div class="three column row">
+        <div class="ten wide column">
+        
+					<div class="ui fluid multiple search selection dropdown" id="listSelection">
+            <input type="hidden" name="lists" id ="lists" value="-1">
+            <i class="dropdown icon"></i>
+            <div class="default text">All lists</div>
+            <div class="menu" id="listItems">
+            </div>
+          </div>
+          <div class="ui pointing blue label">Pick lists</div>
+				</div>
+        <div class="two left aligned wide column">
+					<button class="ui teal button" id="clearListSelection">Clear</button>
+				</div>
+      </div>  
+			<div class="three column row">
+				<div class="four wide column">
 					<div class="field">
 						<div id="wordfield" class="ui right labeled input">
 							<a class="ui label" onclick="decreaseWordNumber()">-</a>
 							<input id="wordnumber" onchange="checkWordNumber()" type="number" style="text-align:center;" placeholder="Amount" value="20">
 							<a class="ui label" onclick="increaseWordNumber()">+</a>
-							
 						</div>
 						<div class="ui pointing blue label">Words to practice</div>
 					</div>
 				</div>
-				<div class="ten right aligned wide column">
+        <div class="four wide column">
+        </div>
+        <div class="eight left aligned wide column">
 					<button class="ui teal submit button" id="start">Start</button>
 				</div>
 			</div>
