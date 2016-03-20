@@ -55,10 +55,10 @@ function getUserInfo($conn, $userID) {
 	}
 }
 
-function insertWord($conn, $userID, $word, $translation, $description, $list) {
-	$sql = "INSERT INTO `Words` (`UserID`, `ListID`, `Word`, `Translation`, `Description`) VALUES (?,?,?,?,?)";
+function insertWord($conn, $userID, $word, $translation, $description, $wordBase, $list) {
+	$sql = "INSERT INTO `Words` (`UserID`, `ListID`, `Word`, `Translation`, `Description`, `WordBase`) VALUES (?,?,?,?,?,?)";
 	$msg = array();
-	if (insertRow($conn, $sql, "iisss", $userID, $list, $word, $translation, $description)) {
+	if (insertRow($conn, $sql, "iissss", $userID, $list, $word, $translation, $description, $wordBase)) {
     $sql = "SELECT LAST_INSERT_ID() AS WordID";
     $wordIDRow = fetchRows($conn, $sql);
     $wordID = $wordIDRow[0]["WordID"];
@@ -79,11 +79,11 @@ function insertWord($conn, $userID, $word, $translation, $description, $list) {
   return $msg;
 }
 
-function updateWord($conn, $userID, $id, $word, $translation, $description) {
-	$sql = "UPDATE `Words` SET `Word`=?,`Translation`=?,`Description`=? WHERE `ID`=? AND `UserID`=?";
+function updateWord($conn, $userID, $id, $word, $translation, $description, $wordBase) {
+	$sql = "UPDATE `Words` SET `Word`=?,`Translation`=?,`Description`=?, `WordBase`=? WHERE `ID`=? AND `UserID`=?";
   
 	$word_stmt =  $conn->prepare($sql);
-	$word_stmt->bind_param("sssii", $word, $translation, $description, $id, $userID);
+	$word_stmt->bind_param("ssssii", $word, $translation, $description, $wordBase, $id, $userID);
 	
 	if ($word_stmt->execute()) {
 		return "OK";
@@ -157,15 +157,45 @@ function logUserOut($conn, $token) {
 	}
 }
 
-function getPracticeList($conn, $userID, $n, $list = -1) {
-  $sql = "SELECT w.ID, w.Word, w.Translation, w.Description
+function getPracticeList($conn, $userID, $lists, $n) {
+  if (! is_array($lists)) {
+    $lists = $lists;
+  }
+
+  $listMarks = array();
+  for ($i = 0; $i < count($lists); $i++) {
+    array_push($listMarks, "?");
+  }
+  
+  $sql = "SELECT w.ID, w.Word, w.Translation, w.Description, ul.ListID
     ,CASE WHEN uws.Step IS NULL THEN 1 ELSE uws.Step END AS Step
     FROM UserList ul INNER JOIN Words w ON 
-    (ul.UserID=? AND w.ListID=ul.ListID AND	((?=-1) OR (?!=-1 AND ul.ListID IN (?))))
+    (ul.UserID=? AND w.ListID=ul.ListID %ListCriteria%)
     LEFT OUTER JOIN UserWordStep AS uws ON 
     (uws.Step<uws.GoalStep AND uws.WordID=w.ID AND uws.UserID=ul.UserID) 
     ORDER BY RAND() LIMIT 0,?";
-	return fetchRows($conn, $sql, 'iiiii', $userID, $list, $list, $list, $n);
+    
+  $listCriteria = "";
+  $binds = 'ii';
+  if (count($lists) > 1 || (count($lists) == 1) && $lists[0] != -1) {
+    $listCriteria = str_ireplace("%lists%", implode(",", $listMarks), " AND ul.ListID IN (%lists%) ");
+    $binds = 'i' . str_repeat("i", count($lists)) . 'i';
+  } else {
+    $lists = array();
+  }
+  $sql = str_ireplace("%ListCriteria%", $listCriteria, $sql);
+        
+  $args = array($conn, $sql, $binds, $userID);
+  
+  foreach ($lists as $l) {
+    array_push($args, $l);
+  }
+
+  array_push($args, $n);
+  
+  $rows = call_user_func_array('fetchRows', $args);
+
+	return $rows;
 }
 
 function submitPractice($conn, $userID, $cr, $incr) {
@@ -317,7 +347,7 @@ function sendVerificationEmail($conn, $userID, $code, $verCode, $identifier, $em
 
 function getListList($conn, $userID, $first=0, $last=10) {
   $cnt = $last - $first;
-  $sql = "SELECT `l`.`ListID`, `l`.`ListName` FROM `UserInfo` AS `usr` INNER JOIN `UserList` AS `ul` ON `ul`.`UserID` = `usr`.`ID` ".
+  $sql = "SELECT `l`.`ListID` AS value, `l`.`ListName` AS name FROM `UserInfo` AS `usr` INNER JOIN `UserList` AS `ul` ON `ul`.`UserID` = `usr`.`ID` ".
       "INNER JOIN `List` AS `l` ON `l`.`ListID`=`ul`.`ListID` ".
       "WHERE `usr`.`ID`=? ORDER BY `ListCreatedOn` DESC LIMIT ?,?";
 	
@@ -411,10 +441,11 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 		switch($_GET["action"]) {
 			case "insert":
 				$word = isset($_POST["word"]) ? $_POST["word"] : "";
+        $wordBase = isset($_POST["wordbase"]) ? $_POST["wordbase"] : "";
 				$translation = isset($_POST["translation"]) ? $_POST["translation"] : "";
 				$description = isset($_POST["description"]) ? $_POST["description"] : "";
         $list = $_POST["list"];
-				$message = insertWord($conn, $userID, $word, $translation, $description, $list);
+				$message = insertWord($conn, $userID, $word, $translation, $description, $wordBase, $list);
 				break;
 			case "get":
 				$message["action"] = "check";
@@ -427,8 +458,8 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
         if (isset($_POST["filter"])) {
           $filter = $_POST["filter"];
         }
-        $message["wordcount"] = getWordsCount($conn, $_POST["list"], $userID, $filter);
-				$message["words"] = getWordsList($conn, $userID, $_POST["list"], $_POST["first"], $_POST["last"], $filter);
+        $message["wordcount"] = getWordsCount($conn, $_POST["lists"], $userID, $filter);
+				$message["words"] = getWordsList($conn, $userID, $_POST["lists"], $_POST["first"], $_POST["last"], $filter);
 				break;
 			case "wordcount":
 				$message["wordcount"] = getWordsCount($conn, $_GET["list"], $userID);
@@ -440,10 +471,17 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				// destroy the session 
 				session_destroy(); 
 			case "practicelist":
+        $lists = array(-1);
+        if(isset($_POST["lists"])) {
+          $lists = $_POST["lists"];
+          if (! is_array($lists)) {
+            $lists = array($lists);
+          }
+        }
 				if (isset($_GET["count"])) {
-					$message["practicelist"] = getPracticeList($conn, $userID, $_GET["count"]);
+					$message["practicelist"] = getPracticeList($conn, $userID, $lists, $_GET["count"]);
 				} else {
-					$message["practicelist"] = getPracticeList($conn, $userID, 10);
+					$message["practicelist"] = getPracticeList($conn, $userID, $lists, 10);
 				}
 				break;
 			case "submitpractice":
@@ -458,9 +496,10 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 			case "updateword":
 				$wid = isset($_POST["id"]) ? $_POST["id"] : "";
 				$word = isset($_POST["word"]) ? $_POST["word"] : "";
+        $wordBase = isset($_POST["wordbase"]) ? $_POST["wordbase"] : "";
 				$translation = isset($_POST["translation"]) ? $_POST["translation"] : "";
 				$description = isset($_POST["description"]) ? $_POST["description"] : "";
-				$message["status"] = updateWord($conn, $userID, $wid, $word, $translation, $description);
+				$message["status"] = updateWord($conn, $userID, $wid, $word, $translation, $description, $wordBase);
 				break;
       case "deleteword":
 				$wid = isset($_POST["id"]) ? $_POST["id"] : "";
@@ -471,7 +510,8 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				$message["status"] = insertList($conn, $userID, $list);
 				break;
       case "listlist":
-				$message["lists"] = getListList($conn, $userID, $_GET["first"], $_GET["last"]);
+				$message["results"] = getListList($conn, $userID, $_GET["first"], $_GET["last"]);
+        $message["success"] = true;
 				break;
       case "sharelistuser":
 				$message["status"] = shareListUser($conn, $userID, $_POST["user"], $_POST["list"]);
