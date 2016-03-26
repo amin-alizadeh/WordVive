@@ -24,7 +24,7 @@ INNER JOIN
 ) AS dups
 	ON dups.BaseWord = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(w.Word), ' ', ''),  '+', ''), ',',''),'/', ''), '''', ''), '-','') AND w.UserID = dups.UserID
 
-  SELECT w.* 
+SELECT w.* 
 FROM `Words` w
 INNER JOIN UserList ul ON ul.ListID=w.ListID AND ul.UserID=1
 WHERE `WordBase` LIKE 'Harvinainen'
