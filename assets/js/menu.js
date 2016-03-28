@@ -8,7 +8,7 @@ if (localStorage.hasOwnProperty("token")) {
 var menu = '<a href="insertword.html" class="item"><i class="home icon"></i>Home</a>' +
 			'<a href="testwords.html" class="item"><i class="student icon"></i>Test</a>' +
 			'<div class="right menu">' +
-				'<a href="#" class="ui simple dropdown item">' +
+				'<a class="ui simple dropdown item">' +
 					'<div id="username">Hello User!</div> <i class="dropdown icon"></i>' +
 					'<div class="menu">' +
 						'<div class="item" id="profile"><i class="student icon"></i>Profile</div>' +
@@ -27,7 +27,7 @@ $(document).ready(function() {
 	});
 //	$("username").text();
 	$("#profile").click(function(){
-		console.log("profile");
+		window.location.href = 'profile.html';
 	});
 	
 	$("#settings").click(function(){

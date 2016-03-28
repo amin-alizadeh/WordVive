@@ -33,49 +33,128 @@ function getUserFromToken($conn, $token) {
 
 function getUserInfo($conn, $userID) {
 	$sql = "SELECT CASE WHEN `NickName` IS NULL OR LENGTH(`NickName`) = 0 THEN CONCAT(`FirstName`,' ',`LastName`) ELSE `NickName` END AS NickName FROM UserInfo WHERE ID=?";
-	if (!($stmt = mysqli_prepare($conn, $sql))) {
-		echo "Could not prepare the statement";
-	}
-	if (!$stmt->bind_param('i', $userID)) {
-		throw new \Exception("Database error: $stmt->errno - $stmt->error");
-	}
+  
+  $rows = fetchRows($conn, $sql, "i", $userID);
+  
+  if (count(rows) == 1){
+    return $rows[0]['NickName'];
+  } else {
+    return "";
+  }
+}
 
-	mysqli_stmt_execute($stmt);
-	mysqli_stmt_bind_result($stmt, $nickName);
-	$stmt->store_result();
-	$num_result = $stmt->num_rows;
+function getUserDetail($conn, $userID) {
+  $sql = "SELECT `username`, `email`, `NickName` AS nickname, `FirstName` AS firstname, `LastName` AS lastname FROM `UserInfo` WHERE `ID` = ?";
+  
+  $rows = fetchRows($conn, $sql, "i", $userID);
+  $msg = array();
+  if (count(rows) == 1){
+    $msg["success"] = true;
+    $msg["user"] = $rows[0];
+  } else {
+    $msg["success"] = false;
+    $msg["user"] = array();
+  }
+  return $msg;
+}
+
+function updateUserDetail($conn, $userID, $firstname, $lastname, $nickname) {
+  $sql = "UPDATE `UserInfo` SET `NickName`=?, `FirstName`=?, `LastName`=? WHERE `ID`=?";
+  
+  $user_stmt = $conn->prepare($sql);
+	$user_stmt->bind_param("sssi", $nickname, $firstname, $lastname, $userID);
 	
-	//$result = $conn->query($sql);
-
-	if ($num_result > 0) {
-		mysqli_stmt_fetch($stmt);
-		return $nickName;
+	if ($user_stmt->execute()) {
+		return "OK";
 	} else {
-		return "";
+		return "Error";
 	}
 }
 
-function insertWord($conn, $userID, $word, $translation, $description, $wordBase, $list) {
-	$sql = "INSERT INTO `Words` (`UserID`, `ListID`, `Word`, `Translation`, `Description`, `WordBase`) VALUES (?,?,?,?,?,?)";
-	$msg = array();
-	if (insertRow($conn, $sql, "iissss", $userID, $list, $word, $translation, $description, $wordBase)) {
-    $sql = "SELECT LAST_INSERT_ID() AS WordID";
-    $wordIDRow = fetchRows($conn, $sql);
-    $wordID = $wordIDRow[0]["WordID"];
-    if ($wordID > 0) {
-      $sql = "INSERT INTO `UserWordStep`(`UserID`, `WordID`) VALUES (?,?)";
-      $msg["WordID"] = $wordID;
-      if (insertRow($conn, $sql, "ii", $userID, $wordID)) {
-        $msg["status"] = "OK";
+function updatePassword($conn, $userID, $password, $newpassword, $passwordSalt) {
+  $msg = array();
+  $msg["correctPassword"] = false;
+  $msg["success"] = false;
+  
+  $sql = "SELECT COUNT(*) AS matches FROM `UserInfo` WHERE `ID`=? AND `password`=MD5(?+`Identifier`+?)";
+  
+  $passCorrect = fetchRows($conn, $sql, 'iss', $userID, $password, $passwordSalt);
+  
+  if ($passCorrect[0]["matches"] == 0) {
+    $msg["message"] = "Incorrect password";
+    return $msg;
+  } else {
+    $msg["correctPassword"] = true;
+  }
+  //UPDATE `UserInfo` SET `password`=[value-5] WHERE 1
+  $sql = "UPDATE `UserInfo` SET `password`=MD5(?+`Identifier`+?) WHERE `ID`=?";
+  $user_stmt = $conn->prepare($sql);
+	$user_stmt->bind_param("ssi", $newpassword, $passwordSalt, $userID);
+	
+	if ($user_stmt->execute()) {
+		$msg["success"] = true;
+    $msg["message"] = "Password successfully updated";
+	} else {
+		$msg["success"] = false;
+    $msg["message"] = "Internal error. Password was not updated";
+	}
+  mysqli_stmt_close($user_stmt);
+  return $msg;
+}
+
+function checkWordBase($conn, $userID, $wordBase) {
+  $msg = array();
+  $sql = "SELECT w.ID, w.Word, w.Translation, w.Description, 
+    CASE WHEN uws.Step IS NULL THEN 1 ELSE uws.Step END AS Step
+    FROM `Words` w
+    INNER JOIN UserList ul ON ul.ListID=w.ListID AND ul.UserID=?
+    LEFT OUTER JOIN UserWordStep AS uws ON (uws.WordID=w.ID AND uws.UserID=ul.UserID)
+    WHERE `WordBase` LIKE ? LIMIT 0,1"; 
+  
+  $rows = fetchRows($conn, $sql, "is", $userID, $wordBase);
+  
+  if (count($rows) > 0) {
+    return $rows[0];
+  }
+  return null;
+}
+
+function insertWord($conn, $userID, $word, $translation, $description, $wordBase, $list, $forceInsert) {
+  $msg = array();
+  $msg["base"] = $wordBase;
+  $msg["exist1"] = $forceInsert;
+  if (! $forceInsert) {
+    $dupWord = checkWordBase($conn, $userID, $wordBase);
+    if (! is_null($dupWord)) {
+      $msg["word"] = $dupWord;
+      $msg["status"] = "Duplicate";
+    } else {
+      $forceInsert = true;
+    }
+  }
+  $msg["exist2"] = $forceInsert;
+  if ($forceInsert == true) {
+    $sql = "INSERT INTO `Words` (`UserID`, `ListID`, `Word`, `Translation`, `Description`, `WordBase`) VALUES (?,?,?,?,?,?)";
+    if (insertRow($conn, $sql, "iissss", $userID, $list, $word, $translation, $description, $wordBase)) {
+      $sql = "SELECT LAST_INSERT_ID() AS WordID";
+      $wordIDRow = fetchRows($conn, $sql);
+      $wordID = $wordIDRow[0]["WordID"];
+      if ($wordID > 0) {
+        $sql = "INSERT INTO `UserWordStep`(`UserID`, `WordID`) VALUES (?,?)";
+        $msg["WordID"] = $wordID;
+        if (insertRow($conn, $sql, "ii", $userID, $wordID)) {
+          $msg["status"] = "OK";
+        } else {
+          $msg["status"] = "Error";
+        }
       } else {
         $msg["status"] = "Error";
       }
     } else {
       $msg["status"] = "Error";
     }
-	} else {
-		$msg["status"] = "Error";
-	}
+  }  
+	
   return $msg;
 }
 
@@ -118,7 +197,7 @@ function getWordsList($conn, $userID, $lists, $first, $last, $filter='%') {
     "INNER JOIN List AS l ON l.ListID=ul.ListID ".
     "INNER JOIN Words AS w ON w.ListID = l.ListID ".
     "LEFT OUTER JOIN UserWordStep AS uws ON (uws.WordID=w.ID AND uws.UserID=usr.ID) ".
-    "WHERE (w.Word LIKE ?) ".
+    "WHERE (w.WordBase LIKE ?) ".
     "ORDER BY InsertTime DESC LIMIT ?,?"; 
   $sql = str_ireplace("%lists%", implode(",", $listMarks), $sql);
   $binds = 'i' . str_repeat("i", count($lists)) . 'sii';
@@ -445,13 +524,23 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				$translation = isset($_POST["translation"]) ? $_POST["translation"] : "";
 				$description = isset($_POST["description"]) ? $_POST["description"] : "";
         $list = $_POST["list"];
-				$message = insertWord($conn, $userID, $word, $translation, $description, $wordBase, $list);
+        $forceInsert = isset($_POST["force"]) ? filter_var($_POST["force"], FILTER_VALIDATE_BOOLEAN) : false;
+				$message = insertWord($conn, $userID, $word, $translation, $description, $wordBase, $list, $forceInsert);
 				break;
 			case "get":
 				$message["action"] = "check";
 				break;
 			case "userinfo":
 				$message["user"] = getUserInfo($conn, $userID);
+			break;
+      case "userdetail":
+				$message["user"] = getUserDetail($conn, $userID);
+			break;
+      case "updateuserdetail":
+				$message["status"] = updateUserDetail($conn, $userID, $_POST["firstname"], $_POST["lastname"], $_POST["nickname"]);
+			break;
+      case "updatepassword":
+				$message["update"] = updatePassword($conn, $userID, $_POST["password"], $_POST["newpassword"], $passwordSalt);
 			break;
 			case "wordlist":
         $filter = "%";

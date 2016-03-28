@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
     <!-- Site Properities -->
-    <title>Word Memory - Insert</title>
+    <title>WordVive - Insert</title>
     <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
     <link rel="stylesheet" type="text/css" href="dist/components/reset.css">
     <link rel="stylesheet" type="text/css" href="dist/components/site.css">
@@ -98,6 +98,7 @@
 		<div class="ui two column stackable grid">	
 			<div class="one column row">
 				<div class="eight wide column">
+          <div class="ui pointing below yellow label" style="visibility:hidden;" id="duplicateWord">Duplicate word</div> 
 					<div class="field">
 						<div id="wordfield" class="ui fluid left icon corner labeled input">
 							<i class="book icon"></i>
@@ -212,7 +213,7 @@
 			
 				<div class="ui form" id="modalDescription">
 					<div class="ui two column stackable grid">	
-						<div class="one column row">
+						<div class="two column row">
 							<div class="eight wide column">
 								<div class="field">
 									<div id="wordfield" class="ui fluid left icon corner labeled input">
@@ -224,6 +225,12 @@
 									</div>
 								</div>
 							</div>
+              <div class="eight wide column">
+                <div class="ui checkbox" id="editCheckbox">
+                  <input type="checkbox" id="editCheckboxObj" onclick="editCheckboxState(this)">
+                  <label id="editCheckboxLabel">My entry</label>
+                </div>
+              </div>
 						</div>
 						<div class="one column row">
 							<div class="ten wide column">
@@ -265,8 +272,13 @@
 				<i class="minus circle icon"></i>
 			</div>
 			
-			<div class="ui green right labeled icon button" id="submitEditWord" onclick="submitEdit()">
-				OK
+			<div class="ui green right labeled icon button" id="submitEditWord" onclick="submitEdit()" style="display:inline;">
+				Update
+				<i class="checkmark icon"></i>
+			</div>
+      
+      <div class="ui green right labeled icon button" id="submitInsertNewWord" onclick="submitInsertNewWord()" style="display:none;">
+				Insert New
 				<i class="checkmark icon"></i>
 			</div>
 		</div>
@@ -284,12 +296,12 @@
     </div>
 		<div class="actions">
 			<div class="ui black right labeled icon button" id="cancelDeleteWord" onclick="cancelDelete()">
-				Cancel
+				No
 				<i class="minus circle icon"></i>
 			</div>
 			
 			<div class="ui green right labeled icon button" id="submitDeleteWord" onclick="submitDelete()">
-				OK
+				Yes
 				<i class="checkmark icon"></i>
 			</div>
 		</div>

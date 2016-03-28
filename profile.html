@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <!-- Standard Meta -->
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+  <!-- Site Properities -->
+  <title>WordVive - Profile</title>
+  <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
+  <link rel="stylesheet" type="text/css" href="dist/components/reset.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/site.css">
+
+  <link rel="stylesheet" type="text/css" href="dist/components/container.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/grid.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/header.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/image.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/menu.css">
+
+  <link rel="stylesheet" type="text/css" href="dist/components/divider.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/list.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/segment.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/dropdown.css">
+  <link rel="stylesheet" type="text/css" href="dist/components/icon.css">
+	<link rel="stylesheet" type="text/css" href="dist/semantic.css">
+  <link rel="stylesheet" type="text/css" href="dist/jquery.toast.min.css">
+	
+	<script src="assets/library/jquery-latest.min.js"></script>
+  
+	<script src="dist/semantic.js"></script>
+	<script src="dist/components/form.js"></script>
+	<script src="dist/components/transition.js"></script>
+	<script src="assets/library/md5.js"></script><!--from: https://github.com/blueimp/JavaScript-MD5-->
+  <script src="dist/jquery.toast.min.js"></script><!--https://github.com/kamranahmedse/jquery-toast-plugin-->
+  
+    <style type="text/css">
+        body {
+            background-color: #FFFFFF;
+        }
+        .ui.menu .item img.logo {
+            margin-right: 1.5em;
+        }
+        .main.container {
+            margin-top: 7em;
+        }
+        .wireframe {
+            margin-top: 2em;
+        }
+        .ui.footer.segment {
+            margin: 5em 0em 0em;
+            padding: 5em 0em;
+        }
+    </style>
+
+</head>
+
+<body>
+
+  <div class="ui fixed inverted menu">
+      <div class="ui container" id="menu">
+          
+      </div>
+  </div>
+
+    
+   
+  <div class="ui main text container">
+    <a class="ui teal ribbon label" href="insertword.html"><i class="arrow left icon"></i>Back</a>
+    <h1 class="ui header">Profile information</h1>
+     
+    <div class="ui large form" id="profileDetails">
+      <div class="two fields">
+        <div class="disabled field">
+        <div class="ui fluid label">Username</div>
+          <input name="username" type="text" placeholder="User name" maxlength="20">
+        </div>
+        <div class="disabled field">
+          <div class="ui fluid label">Email</div>
+          <input name="email" type="text" placeholder="Email" maxlength="50">
+        </div>
+      </div>
+      <div class="two fields">
+        <div class="field">
+          <div class="ui fluid label">First name</div>
+          <input name="firstname" type="text" placeholder="First name" maxlength="20">
+        </div>
+        <div class="field">
+          <div class="ui fluid label">Last name</div>
+          <input name="lastname" type="text" placeholder="Last name" maxlength="20">
+        </div>
+      </div>
+      <div class="two fields">
+        <div class="field">
+          <div class="ui fluid label">Nickname</div>
+          <input name="nickname" type="text" placeholder="Nickname" maxlength="20">
+        </div>
+        <div class="field" style="visibility:hidden;">
+          <div class="ui fluid label">BLANK</div>
+          <input type="text" maxlength="20">
+        </div>
+      </div>
+      
+      
+      <button class="ui teal fluid submit button" id="submitDetails">Save</button>
+      <div class="ui error message"></div>
+    </div>
+    
+    <h4 class="ui horizontal divider header">
+      <i class="ui barcode icon"></i>
+      Password
+    </h4>
+    <div class="ui large form" id="profilePassword">
+      <div class="two fields">
+        <div class="field">
+          <input name="password" type="password" placeholder="Current Password" maxlength="20">
+        </div>
+      </div>
+      <div class="two fields">
+        <div class="field">
+          <input name="newpassword" type="password" placeholder="New Password" maxlength="20">
+        </div>
+      </div>
+      <div class="two fields">
+        <div class="field">
+          <input name="repassword" type="password" placeholder="Confirm Password" maxlength="20">
+        </div>
+      </div>
+      
+      <button class="ui teal fluid submit button" id="submitPassword">Save</button>
+      <div class="ui error message" id="passwordErrorMessage"></div>
+    </div>
+    
+  </div>
+	
+    <div class="ui inverted vertical footer segment">
+        <div class="ui center aligned container">
+            <div class="ui inverted section divider"></div>
+            <img src="assets/images/logo.png" class="ui centered mini image">
+            <div class="ui horizontal inverted small divided link list">
+                <a class="item" href="#">Contact Us</a>
+                <a class="item" href="#">About</a>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="assets/js/utils.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/profile.js"></script>
+</html>

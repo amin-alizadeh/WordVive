@@ -13,8 +13,13 @@ var wordSettings = '<i onclick="editWord(%n%)" class="teal edit icon"></i>'+
 					'<i onclick="deleteWord(%n%)" class="red remove icon"></i>';
 var wordsList = [];
 var listList = [];
+var dupWord = [];
 var wordEditID = -1;
 var wordDeleteID = -1;
+var firstL = 0;
+var lastL = 50;
+var forceInsertWord = false;
+$("#duplicateWord").css("visibility", "hidden");
 
 if (localStorage.hasOwnProperty("currentPage")) {
   currentPage = parseInt(localStorage.currentPage);
@@ -24,9 +29,13 @@ if (localStorage.hasOwnProperty("wordsPerPage")) {
 }
 
 $(document).ready(function() {
-  //Fetch the word lists:
-  var firstL = 0;
-  var lastL = 50;
+  
+  $('#translation').focusout(function(){beutifyInput($('#translation'))});
+  $('#description').focusout(function(){beutifyInput($('#description'))});
+  $('#edittranslation').focusout(function(){beutifyInput($('#edittranslation'))});
+  $('#editdescription').focusout(function(){beutifyInput($('#editdescription'))});
+  
+  //Fetch the word lists:  
   getWordLists(firstL, lastL);
   
 });
@@ -93,7 +102,7 @@ function selectWordsList(){
         var res = jQuery.parseJSON(data);
 				if (res.status == "OK") {
           $("#listName").val("");
-          getWordLists(0, 10);
+          getWordLists(firstL, lastL);
         }
       });
     }
@@ -127,9 +136,10 @@ function selectWordsList(){
       
 			var list = $('#wordLists').val();
 			$.post("API.php?token=" + token + "&action=insert", 
-      {word:word, translation:translation, description:description, list:list, wordbase:wordBase}, 
+      {word:word, translation:translation, description:description, list:list, wordbase:wordBase, force: false}, 
       function (data) {
 				$("#insert").removeClass("loading");
+        $("#duplicateWord").css("visibility", "hidden");
 				var res = jQuery.parseJSON(data);
 				if (res.status == "OK") {
 					$("#word").val("");
@@ -147,6 +157,16 @@ function selectWordsList(){
 					} else {
 						populateWords(wordsPerPage, 1);
 					}
+        } else if (res.status == "Duplicate") {
+          //$("#duplicateWord").css("visibility", "visible");
+          $('#editCheckbox').css('visibility', 'visible');
+          $("#modalHeader").html("Duplicate");
+          $('#editCheckboxObj').attr('checked', false);
+          if (! $('#wordEditModal').modal('is active')) $('#wordEditModal').modal('show');
+          wordEditID = res.word.ID;
+          dupWord = res.word;
+          editDuplicateWord();
+                    
 				} else {
 					alert ("Something went wrong! Try again later.");
 				}
@@ -184,7 +204,7 @@ function jumpToPage(n) {
     var list = $('#wordLists').val();
     var firstW = (n - 1) * wordsPerPage;
     var lastW = n * wordsPerPage
-    var filter = $("#searchWord").val().trim().split("*").join("%");
+    var filter = $("#searchWord").val().toLowerCase().trim().split("*").join("%") + '%';
     if (filter.length<1){
       filter = "%";
     }
@@ -263,11 +283,15 @@ function jumpToPreviousPage() {
 }
 
 function editWord(id) {
+  $("#modalHeader").html("Edit");
+  $('#editCheckbox').css('visibility', 'hidden');
+  $('#submitEditWord').css('display', 'inline');
+  $('#submitInsertNewWord').css('display', 'none');
 	if (! $('#wordEditModal').modal('is active')) $('#wordEditModal').modal('show');
 	$('#editword').val(wordsList[id].Word);
 	$('#edittranslation').val(wordsList[id].Translation);
 	$('#editdescription').val(wordsList[id].Description);
-	wordEditID = id;
+	wordEditID = wordsList[id].ID;
 }
 
 function deleteWord(id) {
@@ -284,7 +308,7 @@ function submitEdit() {
   var word = $('#editword').val().trim();
   var wordBase = word.toLowerCase().split(' ').join('').split('+').join('').split('/').join('');
 	$.post("API.php?token=" + token + "&action=updateword", 
-  {word:word, id:wordsList[wordEditID].ID, 
+  {word:word, id:wordEditID, 
 	translation:$('#edittranslation').val().trim(), 
   description:$('#editdescription').val().trim(), wordbase:wordBase}, 
   function (data) {
@@ -294,8 +318,37 @@ function submitEdit() {
 		$('#wordEditModal').modal('hide');
 		var res = jQuery.parseJSON(data);
 		if (res.status == "OK") {
-			console.log("OK");
       jumpToPage(currentPage);
+		}
+	});
+}
+
+function submitInsertNewWord() {
+  $("#modalDescription").addClass("loading");
+	$("#submitEditWord").addClass("loading");
+	$("#cancelEditWord").addClass("loading");
+  $("#submitInsertNewWord").addClass("loading");
+  
+  var list = $('#wordLists').val();
+  var word = $('#editword').val().trim();
+  var wordBase = word.toLowerCase().split(' ').join('').split('+').join('').split('/').join('');
+  var translation = $('#edittranslation').val().trim();
+  var description = $('#editdescription').val().trim();
+  $.post("API.php?token=" + token + "&action=insert", 
+  {word:word, translation:translation, description:description, list:list, wordbase:wordBase, force: true}, 
+  function (data) {
+    $("#modalDescription").removeClass("loading");
+		$("#submitEditWord").removeClass("loading");
+		$("#cancelEditWord").removeClass("loading");
+    $("#submitInsertNewWord").removeClass("loading");
+		$('#wordEditModal').modal('hide');
+		var res = jQuery.parseJSON(data);
+		if (res.status == "OK") {
+      $("#word").val("");
+      $("#translation").val("");
+      $("#description").val("");
+      jumpToPage(currentPage);
+      
 		}
 	});
 }
@@ -346,4 +399,40 @@ function submitShareList() {
     }
   });
   
+}
+
+function beutifyInput(obj) {
+  obj.val(distinctStringList(obj.val()));
+}
+
+function editCheckboxState(ch) {
+  if (ch.checked) {
+    insertDuplicateWord();
+    $('#submitEditWord').css('display', 'none');
+    $('#submitInsertNewWord').css('display', 'inline');
+  } else {
+    editDuplicateWord();
+    $('#submitEditWord').css('display', 'inline');
+    $('#submitInsertNewWord').css('display', 'none');
+  }
+}
+
+function editDuplicateWord() {
+  var word = $("#word").val().trim();
+  var wordBase = word.toLowerCase().split(' ').join('').split('+').join('').split('/').join('');
+  var translation = $("#translation").val().trim();
+  var description = $("#description").val().trim();
+  $('#editword').val(dupWord.Word);
+  $('#edittranslation').val(distinctStringList(translation + "," + dupWord.Translation));
+  $('#editdescription').val(distinctStringList(description + "," + dupWord.Description)); 
+}
+
+function insertDuplicateWord() {
+  var word = $("#word").val().trim();
+  var wordBase = word.toLowerCase().split(' ').join('').split('+').join('').split('/').join('');
+  var translation = $("#translation").val().trim();
+  var description = $("#description").val().trim();
+  $('#editword').val(word);
+  $('#edittranslation').val(distinctStringList(translation));
+  $('#editdescription').val(distinctStringList(description)); 
 }
