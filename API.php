@@ -9,26 +9,13 @@ require_once ('helper/DBOperations.php');
 function getUserFromToken($conn, $token) {
 	$uID = null;
 	$sql = "SELECT UserID, ValidUntil, IsValid FROM SessionToken WHERE Token=?";
-	if (!($stmt = mysqli_prepare($conn, $sql))) {
-		echo "Could not prepare the statement";
-	}
-	if (!$stmt->bind_param('s', $token)) {
-		throw new \Exception("Database error: $stmt->errno - $stmt->error");
-	}
-
-	mysqli_stmt_execute($stmt);
-	mysqli_stmt_bind_result($stmt, $userID, $validUntil, $isValid);
-	$stmt->store_result();
-	$num_result = $stmt->num_rows;
-	
-	if ($num_result > 0) {
-		mysqli_stmt_fetch($stmt);
-		if ($isValid == 1) {
-			$uID = $userID;
-		}
-	}
-
-	return $userID;
+  
+  $rows = fetchRows($conn, $sql, "s", $token);
+  if (count($rows) == 1 && $rows[0]['IsValid'] == 1){
+    return $rows[0]['UserID'];
+  } else {
+    return "";
+  }
 }
 
 function getUserInfo($conn, $userID) {
@@ -36,7 +23,7 @@ function getUserInfo($conn, $userID) {
   
   $rows = fetchRows($conn, $sql, "i", $userID);
   
-  if (count(rows) == 1){
+  if (count($rows) == 1){
     return $rows[0]['NickName'];
   } else {
     return "";
@@ -61,10 +48,7 @@ function getUserDetail($conn, $userID) {
 function updateUserDetail($conn, $userID, $firstname, $lastname, $nickname) {
   $sql = "UPDATE `UserInfo` SET `NickName`=?, `FirstName`=?, `LastName`=? WHERE `ID`=?";
   
-  $user_stmt = $conn->prepare($sql);
-	$user_stmt->bind_param("sssi", $nickname, $firstname, $lastname, $userID);
-	
-	if ($user_stmt->execute()) {
+	if (updateRows($conn, $sql, "sssi", $nickname, $firstname, $lastname, $userID)) {
 		return "OK";
 	} else {
 		return "Error";
@@ -86,12 +70,10 @@ function updatePassword($conn, $userID, $password, $newpassword, $passwordSalt) 
   } else {
     $msg["correctPassword"] = true;
   }
-  //UPDATE `UserInfo` SET `password`=[value-5] WHERE 1
+  
   $sql = "UPDATE `UserInfo` SET `password`=MD5(?+`Identifier`+?) WHERE `ID`=?";
-  $user_stmt = $conn->prepare($sql);
-	$user_stmt->bind_param("ssi", $newpassword, $passwordSalt, $userID);
-	
-	if ($user_stmt->execute()) {
+  
+	if (updateRows($conn, $sql, "ssi", $newpassword, $passwordSalt, $userID)) {
 		$msg["success"] = true;
     $msg["message"] = "Password successfully updated";
 	} else {
@@ -160,11 +142,7 @@ function insertWord($conn, $userID, $word, $translation, $description, $wordBase
 
 function updateWord($conn, $userID, $id, $word, $translation, $description, $wordBase) {
 	$sql = "UPDATE `Words` SET `Word`=?,`Translation`=?,`Description`=?, `WordBase`=? WHERE `ID`=? AND `UserID`=?";
-  
-	$word_stmt =  $conn->prepare($sql);
-	$word_stmt->bind_param("ssssii", $word, $translation, $description, $wordBase, $id, $userID);
-	
-	if ($word_stmt->execute()) {
+	if (updateRows($conn, $sql, "ssssii", $word, $translation, $description, $wordBase, $id, $userID)) {
 		return "OK";
 	} else {
 		return "Error";
@@ -228,8 +206,8 @@ function getWordsCount($conn, $list, $userID, $filter = '%') {
 }
 
 function logUserOut($conn, $token) {
-	$sql = "UPDATE SessionToken SET IsValid=0 WHERE Token='". $token ."'";
-	if ($conn->query($sql) === TRUE) {
+	$sql = "UPDATE SessionToken SET IsValid=0 WHERE Token=?";
+	if (updateRows($conn, $sql, "s", $token)) {
 		return true;
 	} else { 
 		return false;
@@ -320,18 +298,9 @@ function registerNewUser($conn, $username, $password, $firstname, $lastname, $em
 	$sql = 'SELECT (SELECT COUNT(username) FROM UserInfo WHERE username=?) AS usernameExist'.
 			', (SELECT COUNT(email) FROM UserInfo WHERE email=?) AS emailExist';
 	
-	if (!($stmt = mysqli_prepare($conn, $sql))) {
-		echo "Could not prepare the statement";
-	}
-	if (!$stmt->bind_param('ss', $username, $email)) {
-		throw new \Exception("Database error: $stmt->errno - $stmt->error");
-	}
-
-	mysqli_stmt_execute($stmt);
-	mysqli_stmt_bind_result($stmt, $usernameExist, $emailExist);
-	$stmt->store_result();
-	$num_result = $stmt->num_rows;
-	mysqli_stmt_fetch($stmt);
+  $row = fetchRows($conn, $sql, 'ss', $username, $email);
+  $usernameExist = $rows[0]['usernameExist'];
+  $emailExist = $rows[0]['emailExist'];
 	
 	if($usernameExist > 0 && emailExist > 0) {
 		$message["status"] = "Fail";
@@ -343,13 +312,8 @@ function registerNewUser($conn, $username, $password, $firstname, $lastname, $em
 		$message["status"] = "Fail";
 		$message["message"] = "Email already exist";
 	} else {
-		
-		
 		$sql = "INSERT INTO UserInfo(username, password, email, FirstName, LastName, passwordsalt) VALUES (?,?,?,?,?,?)";
-		$user_stmt =  $conn->prepare($sql);
-		$user_stmt->bind_param("ssssss", $username, $password, $email, $firstname, $lastname, $passwordSalt);
-		if ($user_stmt->execute()) {
-			
+		if(insertRow($conn, $sql, "ssssss", $username, $password, $email, $firstname, $lastname, $passwordSalt)){
 			if (prepareVerification($conn, $username, $email, $firstname, $lastname, $emailHost, $emailPort, $emailAddress, $emailPassword)) {
 				$message['status'] = 'OK';
 			} else {
@@ -360,8 +324,6 @@ function registerNewUser($conn, $username, $password, $firstname, $lastname, $em
 			$message["status"] = "Fail";
 			$message["message"] = "Server error. Try again later.";
 		}
-		mysqli_stmt_close($user_stmt);
-		mysqli_stmt_close($stmt);
 	}
 
 	return $message;
@@ -371,18 +333,9 @@ function prepareVerification($conn, $username, $email, $firstname, $lastname, $e
 	$sql_ver = "INSERT INTO `Verifications`(`Code`, `UserID`, `VerificationCode`) VALUES(?,?,?)";
 	$sql_usr = "SELECT `ID`, `Identifier` FROM `UserInfo` WHERE username=?";
 	
-	if (!($stmt_usr = mysqli_prepare($conn, $sql_usr))) {
-		echo "Could not prepare the statement";
-	}
-	if (!$stmt_usr->bind_param('s', $username)) {
-		throw new \Exception("Database error: $stmt_usr->errno - $stmt_usr->error");
-	}
-
-	mysqli_stmt_execute($stmt_usr);
-	mysqli_stmt_bind_result($stmt_usr, $userID, $identifier);
-	$stmt_usr->store_result();
-	$num_result = $stmt_usr->num_rows;
-	mysqli_stmt_fetch($stmt_usr);
+  $rows_usr = fetchRows($conn, $sql_usr, 's', $username);
+  $userID = $rows_usr[0]['ID'];
+  $identifier = $rows_usr[0]['Identifier'];
 	
 	$code = generateRandomString(32);
 	$verCode = generateRandomString(8);
@@ -434,71 +387,50 @@ function getListList($conn, $userID, $first=0, $last=10) {
 }
 
 function insertList($conn, $userID, $list) {
+  $message = "Failed";
   $sql = "INSERT INTO `List`(`ListName`) VALUES (?)";
-  $list_in_stmt =  $conn->prepare($sql);
-  $list_in_stmt->bind_param("s", $list);
-  if ($list_in_stmt->execute()) {
+  if (insertRow($conn, $sql, "s", $list)) {
     $sql = "SELECT LAST_INSERT_ID() AS ListID";
-    $list_stmt =  $conn->prepare($sql);
-    if ($list_stmt->execute()) {
-      mysqli_stmt_bind_result($list_stmt, $listID);
-      $list_stmt->store_result();
-      $listID = intval($listID);
-      $num_result = $list_stmt->num_rows;
-      mysqli_stmt_fetch($list_stmt);
-      if($num_result == 1) {
-        $sql = "INSERT INTO `UserList`(`ListID`, `UserID`) VALUES (?, ?)";
-        $stmt_user_list = $conn->prepare($sql);
-        $stmt_user_list->bind_param("ii", $listID, $userID);
-        if ($stmt_user_list->execute()) {
-          $message = "OK";
-        }
-      }      
+    $rows_list = fetchRows($conn, $sql);
+    if (count($rows_list) == 1) {
+      $listID = intval($rows_list[0]['ListID']);      
+      $sql = "INSERT INTO `UserList`(`ListID`, `UserID`) VALUES (?, ?)";
+      if (insertRow($conn, $sql, "ii", $listID, $userID)) {
+        $message = "OK";
+      }
     }
   }
   return $message;
 }
 
-function shareListUser($conn, $userID, $user, $listID){
-  $message = "";
-  $sql = "SELECT `ID` FROM `UserInfo` WHERE `email`=? OR `username`=?";
-  if (!($stmt = mysqli_prepare($conn, $sql))) {
-		echo "Could not prepare the statement";
-	}
-	if (!$stmt->bind_param('ss', $user, $user)) {
-		throw new \Exception("Database error: $stmt->errno - $stmt->error");
-	}
-
-	mysqli_stmt_execute($stmt);
-	mysqli_stmt_bind_result($stmt, $uid);
-	$stmt->store_result();
-	$num_result = $stmt->num_rows;
-	mysqli_stmt_fetch($stmt);
+function renameList($conn, $userID, $listId, $listName) {
   
-  if($num_result == 1) {
+}
+
+function shareListUser($conn, $userID, $user, $listID){
+  $message = "Failed";
+  $sql = "SELECT `ID` FROM `UserInfo` WHERE `email`=? OR `username`=?";
+  $rows_ID = fetchRows($conn, $sql, 'ss', $user, $user);
+  
+  if(count($rows_ID) == 1) {
+    $uid = intval($rows_ID[0]['ID']);
     $sql = "INSERT INTO `UserList`(`UserID`, `ListID`) VALUES (?,?)";
-    if (($stmt_list = mysqli_prepare($conn, $sql))) {
-      if (!$stmt_list->bind_param('ii', $uid, $listID)) {
-        throw new \Exception("Database error: $stmt->errno - $stmt->error");
-      }
-      if ($stmt_list->execute()) {
-        $message = "OK";
-      } else {
-        $message = "List is already assigned or something went wrong.";
-      }
+    if (insertRow($conn, $sql, 'ii', $uid, $listID)) {
+      $message = "OK";
     } else {
-      $message = "Failed";
+      $message = "List is already assigned or something went wrong.";
     }
-    mysqli_stmt_close($stmt_list);
   } else if ($num_result == 0) {
     $message = "User not found";
   } else {
     $message = "There was a mismatch";
   }
-  mysqli_stmt_close($stmt);
   return $message;
 }
 
+/*
+Main body starts here
+*/
 $message = array();
 if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["username"]) && isset($_POST["password"])) {
 	$message = checkLogin ($conn, $_POST["username"], $_POST["password"], $passwordSalt);
