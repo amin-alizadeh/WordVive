@@ -30,7 +30,9 @@ function distinctStringList(wordList) {
         j++;
       }
     }
-    distinctWordString += list[i] + ', ';
+    if (list[i].length > 0){
+      distinctWordString += list[i] + ', ';
+    }
   }
   distinctWordString = distinctWordString.substring (0, distinctWordString.length - 2);
   

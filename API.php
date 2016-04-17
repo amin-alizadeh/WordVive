@@ -48,7 +48,7 @@ function getUserDetail($conn, $userID) {
 function updateUserDetail($conn, $userID, $firstname, $lastname, $nickname) {
   $sql = "UPDATE `UserInfo` SET `NickName`=?, `FirstName`=?, `LastName`=? WHERE `ID`=?";
   
-	if (updateRows($conn, $sql, "sssi", $nickname, $firstname, $lastname, $userID)) {
+	if (modifyRows($conn, $sql, "sssi", $nickname, $firstname, $lastname, $userID)) {
 		return "OK";
 	} else {
 		return "Error";
@@ -73,7 +73,7 @@ function updatePassword($conn, $userID, $password, $newpassword, $passwordSalt) 
   
   $sql = "UPDATE `UserInfo` SET `password`=MD5(?+`Identifier`+?) WHERE `ID`=?";
   
-	if (updateRows($conn, $sql, "ssi", $newpassword, $passwordSalt, $userID)) {
+	if (modifyRows($conn, $sql, "ssi", $newpassword, $passwordSalt, $userID)) {
 		$msg["success"] = true;
     $msg["message"] = "Password successfully updated";
 	} else {
@@ -117,14 +117,14 @@ function insertWord($conn, $userID, $word, $translation, $description, $wordBase
   $msg["exist2"] = $forceInsert;
   if ($forceInsert == true) {
     $sql = "INSERT INTO `Words` (`UserID`, `ListID`, `Word`, `Translation`, `Description`, `WordBase`) VALUES (?,?,?,?,?,?)";
-    if (insertRow($conn, $sql, "iissss", $userID, $list, $word, $translation, $description, $wordBase)) {
+    if (modifyRows($conn, $sql, "iissss", $userID, $list, $word, $translation, $description, $wordBase)) {
       $sql = "SELECT LAST_INSERT_ID() AS WordID";
       $wordIDRow = fetchRows($conn, $sql);
       $wordID = $wordIDRow[0]["WordID"];
       if ($wordID > 0) {
         $sql = "INSERT INTO `UserWordStep`(`UserID`, `WordID`) VALUES (?,?)";
         $msg["WordID"] = $wordID;
-        if (insertRow($conn, $sql, "ii", $userID, $wordID)) {
+        if (modifyRows($conn, $sql, "ii", $userID, $wordID)) {
           $msg["status"] = "OK";
         } else {
           $msg["status"] = "Error";
@@ -141,8 +141,12 @@ function insertWord($conn, $userID, $word, $translation, $description, $wordBase
 }
 
 function updateWord($conn, $userID, $id, $word, $translation, $description, $wordBase) {
-	$sql = "UPDATE `Words` SET `Word`=?,`Translation`=?,`Description`=?, `WordBase`=? WHERE `ID`=? AND `UserID`=?";
-	if (updateRows($conn, $sql, "ssssii", $word, $translation, $description, $wordBase, $id, $userID)) {
+  
+	$sql = "UPDATE Words AS w
+  INNER JOIN UserList AS ul ON w.ListID = ul.ListID AND ul.UserID = ?
+  SET w.`Word`=?, w.`Translation`=?,w.`Description`=?, w.`WordBase`=?
+  WHERE w.`ID`=?";
+	if (modifyRows($conn, $sql, "issssi", $userID, $word, $translation, $description, $wordBase, $id)) {
 		return "OK";
 	} else {
 		return "Error";
@@ -150,12 +154,9 @@ function updateWord($conn, $userID, $id, $word, $translation, $description, $wor
 }
 
 function deleteWord($conn, $userID, $id) {
-	$sql = "DELETE FROM `Words` WHERE `ID`=? AND `UserID`=?";
+	$sql = "DELETE FROM `Words` AS w INNER JOIN UserList AS ul ON w.ListID = ul.ListID AND ul.UserID = ? WHERE w.`ID`=?";
   
-	$word_stmt =  $conn->prepare($sql);
-	$word_stmt->bind_param("ii", $id, $userID);
-	
-	if ($word_stmt->execute()) {
+	if (modifyRows($conn, $sql, "ii", $userID, $id)) {
 		return "OK";
 	} else {
 		return "Error";
@@ -168,15 +169,13 @@ function getWordsList($conn, $userID, $lists, $first, $last, $filter='%') {
     array_push($listMarks, "?");
   }
 
-  $sql = "SELECT w.ID, w.Word, w.Translation, w.Description, ".
-    "CASE WHEN uws.Step IS NULL THEN 1 ELSE uws.Step END AS Step ".
-    "FROM UserInfo AS usr ".
-    "INNER JOIN UserList AS ul  ON usr.ID = ul.UserID AND usr.ID=? AND ul.ListID IN (%lists%) ".
-    "INNER JOIN List AS l ON l.ListID=ul.ListID ".
-    "INNER JOIN Words AS w ON w.ListID = l.ListID ".
-    "LEFT OUTER JOIN UserWordStep AS uws ON (uws.WordID=w.ID AND uws.UserID=usr.ID) ".
-    "WHERE (w.WordBase LIKE ?) ".
-    "ORDER BY InsertTime DESC LIMIT ?,?"; 
+  $sql = "SELECT w.ID, w.Word, w.Translation, w.Description, 
+    CASE WHEN uws.Step IS NULL THEN 1 ELSE uws.Step END AS Step 
+    FROM Words as w
+    INNER JOIN UserList AS ul ON w.ListID = ul.ListID AND ul.UserID=? AND ul.ListID IN (%lists%) 
+    LEFT OUTER JOIN UserWordStep AS uws ON (uws.WordID=w.ID AND uws.UserID=ul.UserID) 
+    WHERE (w.WordBase LIKE ?) 
+    ORDER BY InsertTime DESC LIMIT ?,?";
   $sql = str_ireplace("%lists%", implode(",", $listMarks), $sql);
   $binds = 'i' . str_repeat("i", count($lists)) . 'sii';
   $cnt = ($last - $first);
@@ -207,7 +206,7 @@ function getWordsCount($conn, $list, $userID, $filter = '%') {
 
 function logUserOut($conn, $token) {
 	$sql = "UPDATE SessionToken SET IsValid=0 WHERE Token=?";
-	if (updateRows($conn, $sql, "s", $token)) {
+	if (modifyRows($conn, $sql, "s", $token)) {
 		return true;
 	} else { 
 		return false;
@@ -261,18 +260,15 @@ function submitPractice($conn, $userID, $cr, $incr) {
   "FROM UserWordStep uws ".
   "LEFT OUTER JOIN UserWordStep uwsOrg ON uws.WordID=uwsOrg.WordID AND uwsOrg.UserID=? ".
   "WHERE (uws.WordID IN (". $cr .") OR uws.WordID IN (". $incr .")) AND uwsOrg.UserID IS NULL";
-  $missing_steps_stmt =  $conn->prepare($sql);
-  $missing_steps_stmt->bind_param("ii", $userID, $userID);
-  if ($missing_steps_stmt->execute()) {
+  
+  if (modifyRows($conn, $sql, "ii", $userID, $userID)) {
     $sqlcr = "UPDATE UserWordStep SET Step=Step+1, LastCheckTime=CURRENT_TIMESTAMP WHERE UserID=? AND WordID IN (". $cr .")";
     $sqlincr = "UPDATE UserWordStep SET Step=1, LastCheckTime=CURRENT_TIMESTAMP WHERE UserID=? AND WordID IN (". $incr .")";
     $crres = false;
     $incrres = false;
     
     if (strlen($cr) > 0) {
-      $cr_stmt = $conn->prepare($sqlcr);
-      $cr_stmt->bind_param("i", $userID);
-      if ($cr_stmt->execute()) {
+      if (modifyRows($conn, $sqlcr, "i", $userID)) {
         $crres = true;
       }
     } else {
@@ -280,9 +276,7 @@ function submitPractice($conn, $userID, $cr, $incr) {
     }
     
     if (strlen($incr) > 0) {
-      $incr_stmt = $conn->prepare($sqlincr);
-      $incr_stmt->bind_param("i", $userID);
-      if ($incr_stmt->execute()) {
+      if (modifyRows($conn, $sqlincr, "i", $userID)) {
         $incrres = true;
       }
     } else {
@@ -313,7 +307,7 @@ function registerNewUser($conn, $username, $password, $firstname, $lastname, $em
 		$message["message"] = "Email already exist";
 	} else {
 		$sql = "INSERT INTO UserInfo(username, password, email, FirstName, LastName, passwordsalt) VALUES (?,?,?,?,?,?)";
-		if(insertRow($conn, $sql, "ssssss", $username, $password, $email, $firstname, $lastname, $passwordSalt)){
+		if(modifyRows($conn, $sql, "ssssss", $username, $password, $email, $firstname, $lastname, $passwordSalt)){
 			if (prepareVerification($conn, $username, $email, $firstname, $lastname, $emailHost, $emailPort, $emailAddress, $emailPassword)) {
 				$message['status'] = 'OK';
 			} else {
@@ -389,13 +383,13 @@ function getListList($conn, $userID, $first=0, $last=10) {
 function insertList($conn, $userID, $list) {
   $message = "Failed";
   $sql = "INSERT INTO `List`(`ListName`) VALUES (?)";
-  if (insertRow($conn, $sql, "s", $list)) {
+  if (modifyRows($conn, $sql, "s", $list)) {
     $sql = "SELECT LAST_INSERT_ID() AS ListID";
     $rows_list = fetchRows($conn, $sql);
     if (count($rows_list) == 1) {
       $listID = intval($rows_list[0]['ListID']);      
       $sql = "INSERT INTO `UserList`(`ListID`, `UserID`) VALUES (?, ?)";
-      if (insertRow($conn, $sql, "ii", $listID, $userID)) {
+      if (modifyRows($conn, $sql, "ii", $listID, $userID)) {
         $message = "OK";
       }
     }
@@ -403,8 +397,22 @@ function insertList($conn, $userID, $list) {
   return $message;
 }
 
-function renameList($conn, $userID, $listId, $listName) {
-  
+function renameList($conn, $userID, $listID, $listName) {
+  $sql = "UPDATE `List` AS l 
+  INNER JOIN `UserList` AS ul ON l.ListID=ul.ListID AND l.ListID=? AND ul.UserID=?
+  SET l.`ListName`=?";
+  if (modifyRows($conn, $sql, "iis", $listID, $userID, $listName)) {
+    return "OK";
+  }
+  return "Failed";
+}
+
+function deleteList($conn, $userID, $listID) {
+  $sql = "DELETE FROM `List` AS l INNER JOIN `UserList` AS ul ON l.ListID=ul.ListID AND l.ListID=? AND ul.UserID=?";
+  if (modifyRows($conn, $sql, "ii", $listID, $userID)) {
+    return "OK";
+  }
+  return "Failed";
 }
 
 function shareListUser($conn, $userID, $user, $listID){
@@ -415,7 +423,7 @@ function shareListUser($conn, $userID, $user, $listID){
   if(count($rows_ID) == 1) {
     $uid = intval($rows_ID[0]['ID']);
     $sql = "INSERT INTO `UserList`(`UserID`, `ListID`) VALUES (?,?)";
-    if (insertRow($conn, $sql, 'ii', $uid, $listID)) {
+    if (modifyRows($conn, $sql, 'ii', $uid, $listID)) {
       $message = "OK";
     } else {
       $message = "List is already assigned or something went wrong.";
