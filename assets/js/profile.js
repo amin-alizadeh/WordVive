@@ -115,7 +115,6 @@ $(document).ready(function() {
   $.get("API.php?action=userdetail&token=" + token, function (data) {
 		var res = jQuery.parseJSON(data);
     if (res.status == "OK" && res.user.success){
-      console.log(res);
       $('input[name=username]').val(res.user.user.username);
       $('input[name=firstname]').val(res.user.user.firstname);
       $('input[name=lastname]').val(res.user.user.lastname);

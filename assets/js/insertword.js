@@ -319,6 +319,9 @@ function submitEdit() {
 		var res = jQuery.parseJSON(data);
 		if (res.status == "OK") {
       jumpToPage(currentPage);
+      $("#word").val("");
+      $("#translation").val("");
+      $("#description").val("");
 		}
 	});
 }
@@ -393,6 +396,7 @@ function submitShareList() {
     var res = jQuery.parseJSON(data);
 		if (res.status == "OK") {
       $('#shareListModal').modal('hide');
+      showToast('Share List','List Successfully shared', 'success', 0);
     } else {
       $('#shareListMessage').html(res.status);
       $('#shareListMessage').removeClass('hidden');
