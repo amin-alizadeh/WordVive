@@ -2,9 +2,10 @@
 date_default_timezone_set('Europe/Helsinki');
 require_once ('connect.php'); //credentials.php is required in connect.php
 require_once ('login.php'); //lib/random/random.php is required in login.php
-require_once 'PHPMailer/PHPMailerAutoload.php';
+//require_once 'PHPMailer/PHPMailerAutoload.php';
 require_once ('helper/verificationhelper.php');
 require_once ('helper/DBOperations.php');
+//require_once ('helper/Emailer.php');
 
 function getUserFromToken($conn, $token) {
 	$uID = null;
@@ -287,7 +288,7 @@ function submitPractice($conn, $userID, $cr, $incr) {
 	return false;
 }
 
-function registerNewUser($conn, $username, $password, $firstname, $lastname, $email, $terms, $emailHost, $emailPort, $emailAddress, $emailPassword, $passwordSalt) {
+function registerNewUser($conn, $username, $password, $firstname, $lastname, $email, $terms, $passwordSalt) {
 	$message = array();
 	$sql = 'SELECT (SELECT COUNT(username) FROM UserInfo WHERE username=?) AS usernameExist'.
 			', (SELECT COUNT(email) FROM UserInfo WHERE email=?) AS emailExist';
@@ -308,7 +309,7 @@ function registerNewUser($conn, $username, $password, $firstname, $lastname, $em
 	} else {
 		$sql = "INSERT INTO UserInfo(username, password, email, FirstName, LastName, passwordsalt) VALUES (?,?,?,?,?,?)";
 		if(modifyRows($conn, $sql, "ssssss", $username, $password, $email, $firstname, $lastname, $passwordSalt)){
-			if (prepareVerification($conn, $username, $email, $firstname, $lastname, $emailHost, $emailPort, $emailAddress, $emailPassword)) {
+			if (prepareVerification($conn, $username, $email, $firstname, $lastname)) {
 				$message['status'] = 'OK';
 			} else {
 				$message["status"] = "Fail";
@@ -323,7 +324,7 @@ function registerNewUser($conn, $username, $password, $firstname, $lastname, $em
 	return $message;
 }
 
-function prepareVerification($conn, $username, $email, $firstname, $lastname, $emailHost, $emailPort, $emailAddress, $emailPassword) {
+function prepareVerification($conn, $username, $email, $firstname, $lastname) {
 	$sql_ver = "INSERT INTO `Verifications`(`Code`, `UserID`, `VerificationCode`) VALUES(?,?,?)";
 	$sql_usr = "SELECT `ID`, `Identifier` FROM `UserInfo` WHERE username=?";
 	
@@ -334,41 +335,19 @@ function prepareVerification($conn, $username, $email, $firstname, $lastname, $e
 	$code = generateRandomString(32);
 	$verCode = generateRandomString(8);
 	
-	$stmt_ver = $conn->prepare($sql_ver);
-	$stmt_ver->bind_param("sis", $code, $userID, $verCode);
-	if($stmt_ver->execute()) {
-		return sendVerificationEmail($conn, $userID, $code, $verCode, $identifier, $email, $firstname, $lastname, $emailHost, $emailPort, $emailAddress, $emailPassword);
+	if(modifyRows($conn, $sql_ver, "sis", $code, $userID, $verCode)) {
+		return sendVerificationEmail($conn, $userID, $code, $verCode, $identifier, $email);
 	} else {
 		return false;
 	}
+  
 }
 
-function sendVerificationEmail($conn, $userID, $code, $verCode, $identifier, $email, $firstname, $lastname, $emailHost, $emailPort, $emailAddress, $emailPassword) {
-	$mail = new PHPMailer;
-	$mail->isSMTP(); // Set mailer to use SMTP
-	$mail->Host = $emailHost;  // Specify main and backup SMTP servers
-	$mail->Username = $emailAddress;
-	$mail->Password = $emailPassword;
-	$mail->Port = $emailPort;
-	$mail->setFrom($emailAddress, 'WordVive Registration');
-	$mail->addAddress($email, $firstname);
-	$mail->addReplyTo($emailAddress, 'Information');
-	//$mail->SMTPDebug = 1;
-	//$mail->Debugoutput = 'html';
-	
-	$mail->isHTML(true);
-	$preparedMail = prepareEmail($firstname, $lastname, $username, $code, $verCode);//From credentials.php
-	
-	$mail->Subject = $preparedMail["subject"];
-	$mail->Body    = $preparedMail["body"];
-	$mail->AltBody = $preparedMail["altbody"];
+function sendVerificationEmail($conn, $userID, $code, $verCode, $identifier, $email, $firstname, $lastname) {
+  
+	$preparedMail = prepareEmail($firstname, $lastname, $username, $code, $verCode);
 
-	if(!$mail->send()) {
-		return false;
-	} else {
-		return true;
-	}
-
+	return sendEmail($email, $preparedMail["subject"], $preparedMail["body"], $preparedMail["altbody"], "WordVive Registration");
 }
 
 function getListList($conn, $userID, $first=0, $last=10) {
@@ -445,7 +424,7 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 	
 } else if (isset($_GET["action"]) && $_GET["action"] == "register" && isset($_POST["username"]) && isset($_POST["password"]) && isset($_POST["firstname"]) && isset($_POST["lastname"]) && isset($_POST["email"]) && isset($_POST["terms"])) {
 	
-	$message = registerNewUser($conn, $_POST["username"], $_POST["password"], $_POST["firstname"], $_POST["lastname"], $_POST["email"], $_POST["terms"], $emailHost, $emailPort, $emailAddress, $emailPassword, $passwordSalt);
+	$message = registerNewUser($conn, $_POST["username"], $_POST["password"], $_POST["firstname"], $_POST["lastname"], $_POST["email"], $_POST["terms"], $passwordSalt);
 } else if (isset($_GET["action"]) && isset($_POST["code"]) && $_GET["action"] == "verification") {
 	$message["message"] = verifyCode($conn, $_POST["code"], $verificationValid);
 	if (stripos($message["message"], "success") !== false) {
