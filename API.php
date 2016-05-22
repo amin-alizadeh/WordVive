@@ -155,7 +155,7 @@ function updateWord($conn, $userID, $id, $word, $translation, $description, $wor
 }
 
 function deleteWord($conn, $userID, $id) {
-	$sql = "DELETE FROM `Words` AS w INNER JOIN UserList AS ul ON w.ListID = ul.ListID AND ul.UserID = ? WHERE w.`ID`=?";
+	$sql = "DELETE w FROM `Words` AS w INNER JOIN UserList AS ul ON w.ListID = ul.ListID AND ul.UserID = ? WHERE w.`ID`=?";
   
 	if (modifyRows($conn, $sql, "ii", $userID, $id)) {
 		return "OK";
@@ -216,7 +216,9 @@ function logUserOut($conn, $token) {
 
 function getPracticeList($conn, $userID, $lists, $n) {
   if (! is_array($lists)) {
-    $lists = $lists;
+    $list = $lists;
+    $lists = array();
+    $lists[0] = $list;
   }
 
   $listMarks = array();
@@ -241,15 +243,15 @@ function getPracticeList($conn, $userID, $lists, $n) {
     $lists = array();
   }
   $sql = str_ireplace("%ListCriteria%", $listCriteria, $sql);
-        
+  
   $args = array($conn, $sql, $binds, $userID);
   
   foreach ($lists as $l) {
-    array_push($args, $l);
+    array_push($args, intval($l));
   }
 
   array_push($args, $n);
-  
+  //var_dump($args);
   $rows = call_user_func_array('fetchRows', $args);
 
 	return $rows;
@@ -257,7 +259,7 @@ function getPracticeList($conn, $userID, $lists, $n) {
 
 function submitPractice($conn, $userID, $cr, $incr) {
   $sql = "INSERT INTO UserWordStep (WordID, UserID) ".
-  "SELECT uws.WordID, ? ".
+  "SELECT DISTINCT uws.WordID, ? ".
   "FROM UserWordStep uws ".
   "LEFT OUTER JOIN UserWordStep uwsOrg ON uws.WordID=uwsOrg.WordID AND uwsOrg.UserID=? ".
   "WHERE (uws.WordID IN (". $cr .") OR uws.WordID IN (". $incr .")) AND uwsOrg.UserID IS NULL";
@@ -360,7 +362,7 @@ function getListList($conn, $userID, $first=0, $last=10) {
 }
 
 function insertList($conn, $userID, $list) {
-  $message = "Failed";
+  $message = array();
   $sql = "INSERT INTO `List`(`ListName`) VALUES (?)";
   if (modifyRows($conn, $sql, "s", $list)) {
     $sql = "SELECT LAST_INSERT_ID() AS ListID";
@@ -369,7 +371,8 @@ function insertList($conn, $userID, $list) {
       $listID = intval($rows_list[0]['ListID']);      
       $sql = "INSERT INTO `UserList`(`ListID`, `UserID`) VALUES (?, ?)";
       if (modifyRows($conn, $sql, "ii", $listID, $userID)) {
-        $message = "OK";
+        $message["status"] = "OK";
+        $message["ListID"] = $listID;
       }
     }
   }
@@ -515,7 +518,7 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				break;
       case "insertlist":
 				$list = $_POST["list"];
-				$message["status"] = insertList($conn, $userID, $list);
+				$message = insertList($conn, $userID, $list);
 				break;
       case "listlist":
 				$message["results"] = getListList($conn, $userID, $_GET["first"], $_GET["last"]);

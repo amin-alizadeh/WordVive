@@ -37,6 +37,7 @@ $(document).ready(function() {
   
   //Fetch the word lists:  
   getWordLists(firstL, lastL);
+  selectWordsList();
   
 });
 
@@ -67,7 +68,7 @@ function getWordLists(firstL, lastL) {
       $('#wordLists').val(selectedList);
     }
     $('#wordLists').dropdown();
-    selectWordsList();
+    
     populateWords(wordsPerPage, currentPage);
   });
 }
@@ -102,6 +103,7 @@ function selectWordsList(){
         var res = jQuery.parseJSON(data);
 				if (res.status == "OK") {
           $("#listName").val("");
+          localStorage.selectedList = res.ListID;
           getWordLists(firstL, lastL);
         }
       });

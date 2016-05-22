@@ -6,6 +6,9 @@ var wordDescriptionDiv = '<i class="file text outline icon"></i>';
 var firstL = 0;
 var lastL = 50;
 
+$(document).ready(function() {
+  $("#increaseWordNumber").css("z-index", 2);
+});
 
 if (localStorage.hasOwnProperty("practicelist") && localStorage.hasOwnProperty("practicelistInventory")) {
 	practiceList = jQuery.parseJSON(localStorage.practicelist);
