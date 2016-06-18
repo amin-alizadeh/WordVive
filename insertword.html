@@ -65,8 +65,8 @@
     <h1 class="ui header">Lists</h1>
     
 		<div class="ui stackable grid">	
-			<div class="four column row">
-				<div class="five wide column">
+			<div class="five column row">
+				<div class="six wide column">
 					<div class="field">
 						<div id="wordfield" class="ui fluid left icon corner labeled input">
 							<i class="list icon"></i>
@@ -78,16 +78,27 @@
             <div class="ui pointing blue label">Create a list</div>
 					</div>
 				</div>
-        <div class="three wide column">
+        <div class="two wide column">
           <button class="ui teal submit button" id="insertList">Insert</button>
         </div>
-        <div class="five wide column">
+        <div class="six wide column">
           <select class="ui fluid search dropdown" id="wordLists">
           </select>
           <div class="ui pointing blue label">Pick a list</div>
         </div>
-        <div class="two wide column">
-          <button class="ui right labeled icon teal submit button" id="shareList">Share<i class="user icon"></i></button>
+        <div class="two wide right floated column">
+          <div class="ui teal buttons">
+            <div class="ui button">Actions</div>
+            <div class="ui floating dropdown icon button" id="actionButtons">
+              <i class="dropdown icon"></i>
+              <div class="menu">
+                <div class="item" id="renameList"><i class="edit icon"></i>Rename</div>
+                <div class="item" id="shareList"><i class="user icon"></i>Share</div>
+                <div class="item"><i class="hide icon"></i>Delete</div>
+              </div>
+            </div>
+          </div>
+          
         </div>
 			</div>
 			
@@ -337,6 +348,37 @@
 			<div class="ui green right labeled icon button" id="submitShareList" onclick="submitShareList()">
 				Share
 				<i class="user icon"></i>
+			</div>
+		</div>
+	</div>
+  
+  <div class="ui small modal" id="renameListModal">
+		<i class="close icon"></i>
+		<div class="header" id="modalHeader">
+			Rename
+		</div>
+		<div class="content">
+      <div class="description">
+        <div class="ui fluid left icon corner labeled input" id="listNameField">
+          <i class="user icon"></i>
+          <input type="text" id="newListName" placeholder="List">
+          <div class="ui corner label">
+            <i class="asterisk icon"></i>
+          </div>
+        </div>
+        <div class="ui bottom attached hidden warning message" id="renameListMessage">
+        </div>
+      </div>
+    </div>
+		<div class="actions">
+			<div class="ui black right labeled icon button" id="cancelRenameList" onclick="cancelRenameList()">
+				Cancel
+				<i class="minus circle icon"></i>
+			</div>
+			
+			<div class="ui green right labeled icon button" id="submitRenameList" onclick="submitRenameList()">
+				Rename
+				<i class="edit icon"></i>
 			</div>
 		</div>
 	</div>
