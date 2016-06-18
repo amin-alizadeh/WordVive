@@ -527,6 +527,9 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
       case "sharelistuser":
 				$message["status"] = shareListUser($conn, $userID, $_POST["user"], $_POST["list"]);
 				break;
+      case "renamelist":
+        $message["status"] = renameList ($conn, $userID, $_POST["id"], $_POST["name"]);
+        break;
       
 		}
 		

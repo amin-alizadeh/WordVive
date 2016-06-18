@@ -34,7 +34,7 @@ $(document).ready(function() {
   $('#description').focusout(function(){beutifyInput($('#description'))});
   $('#edittranslation').focusout(function(){beutifyInput($('#edittranslation'))});
   $('#editdescription').focusout(function(){beutifyInput($('#editdescription'))});
-  
+  $("#actionButtons").dropdown();
   //Fetch the word lists:  
   getWordLists(firstL, lastL);
   selectWordsList();
@@ -42,11 +42,19 @@ $(document).ready(function() {
 });
 
 function getWordLists(firstL, lastL) {
-  
+  //$('#wordLists').dropdown();
+  //$('#wordLists').dropdown('clear');
   $.get("API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
     var res = jQuery.parseJSON(data);
 		listList = res.results;
-    $('#wordLists').html("");
+    setListDropDown(listList);
+    
+    populateWords(wordsPerPage, currentPage);
+  });
+}
+
+function setListDropDown(l) {
+  $('#wordLists').html("");
     
     var listExists = false;
     var selectedList = -1;
@@ -54,12 +62,12 @@ function getWordLists(firstL, lastL) {
       selectedList = parseInt(localStorage.selectedList);
     }
     
-    for (var i = 0; i < listList.length; i++) {
+    for (var i = 0; i < l.length; i++) {
       $('#wordLists').
       append($("<option></option>").
-      attr("value", listList[i].value).
-      text(listList[i].name));
-      if (selectedList == listList[i].value) {
+      attr("value", l[i].value).
+      text(l[i].name));
+      if (selectedList == l[i].value) {
         listExists = true;
       }
     }
@@ -69,8 +77,6 @@ function getWordLists(firstL, lastL) {
     }
     $('#wordLists').dropdown();
     
-    populateWords(wordsPerPage, currentPage);
-  });
 }
 
 function selectWordsList(){
@@ -115,6 +121,13 @@ function selectWordsList(){
     $('#shareListMessage').html('');
     $('#shareUser').val('');
     $('#shareListModal').modal('show');
+  });
+  
+  $("#renameList").click(function () {
+    $('#renameListMessage').addClass('hidden');
+    $('#renameListMessage').html('');
+    $('#newListName').val($('#wordLists option:selected').text());
+    $('#renameListModal').modal('show');
   });
   
 	$("#insert").click(function () {
@@ -378,6 +391,40 @@ function cancelEdit() {
 
 function cancelDelete() {
   if ($('#wordDeleteModal').modal('is active')) $('#wordDeleteModal').modal('hide');
+}
+
+function cancelRenameList() {
+  $('#renameListModal').modal('hide');
+  $('#listName').val("");
+}
+
+function submitRenameList() {
+  var list = parseInt($('#wordLists').val());
+  var newListName = $('#newListName').val().trim();
+  $('#submitRenameList').addClass('loading');
+  $('#cancelRenameList').addClass('loading');
+  $('#listNameField').addClass('loading');
+  $.post("API.php?token=" + token + "&action=renamelist", {id:list, name: newListName}, function (data) {
+    $('#submitRenameList').removeClass('loading');
+    $('#cancelRenameList').removeClass('loading');
+    $('#listNameField').removeClass('loading');
+    var res = jQuery.parseJSON(data);
+		if (res.status == "OK") {
+      $('#renameListModal').modal('hide');
+      showToast('Rename List','List Successfully Renamed', 'success', 0);
+      for (var i = 0; i < listList.length; i++) {
+        if (listList[i].value == list) {
+          listList[i].name = newListName;
+          break;
+        }
+      }
+      setListDropDown(listList);
+      $('#wordLists').dropdown('set text', newListName);
+    } else {
+      $('#renameListMessage').html(res.status);
+      $('#renameListMessage').removeClass('hidden');
+    }
+  });
 }
 
 function cancelShareList() {
