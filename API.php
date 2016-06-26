@@ -363,8 +363,8 @@ function getListList($conn, $userID, $first=0, $last=10) {
 
 function insertList($conn, $userID, $list) {
   $message = array();
-  $sql = "INSERT INTO `List`(`ListName`) VALUES (?)";
-  if (modifyRows($conn, $sql, "s", $list)) {
+  $sql = "INSERT INTO `List`(`ListName`,`ListOwnerID`) VALUES (?, ?)";
+  if (modifyRows($conn, $sql, "si", $list, $userID)) {
     $sql = "SELECT LAST_INSERT_ID() AS ListID";
     $rows_list = fetchRows($conn, $sql);
     if (count($rows_list) == 1) {
@@ -389,6 +389,15 @@ function renameList($conn, $userID, $listID, $listName) {
   return "Failed";
 }
 
+function deleteList ($conn, $userID, $listID) {
+  $sql = "DELETE FROM `UserList` WHERE `ListID`=? AND `UserID`=?";
+    
+  if (modifyRows($conn, $sql, "ii", $listID, $userID)) {
+    return "OK";
+  }
+  return "Failed";
+}
+/*
 function deleteList($conn, $userID, $listID) {
   $sql = "DELETE FROM `List` AS l INNER JOIN `UserList` AS ul ON l.ListID=ul.ListID AND l.ListID=? AND ul.UserID=?";
   if (modifyRows($conn, $sql, "ii", $listID, $userID)) {
@@ -396,7 +405,7 @@ function deleteList($conn, $userID, $listID) {
   }
   return "Failed";
 }
-
+*/
 function shareListUser($conn, $userID, $user, $listID){
   $message = "Failed";
   $sql = "SELECT `ID` FROM `UserInfo` WHERE `email`=? OR `username`=?";
@@ -529,6 +538,9 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				break;
       case "renamelist":
         $message["status"] = renameList ($conn, $userID, $_POST["id"], $_POST["name"]);
+        break;
+      case "deletelist":
+        $message["status"] = deleteList ($conn, $userID, $_POST["id"]);
         break;
       
 		}

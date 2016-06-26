@@ -94,7 +94,7 @@
               <div class="menu">
                 <div class="item" id="renameList"><i class="edit icon"></i>Rename</div>
                 <div class="item" id="shareList"><i class="user icon"></i>Share</div>
-                <div class="item"><i class="hide icon"></i>Delete</div>
+                <div class="item" id="deleteList"><i class="hide icon"></i>Delete</div>
               </div>
             </div>
           </div>
@@ -301,20 +301,43 @@
   <div class="ui small modal" id="wordDeleteModal">
 		<i class="close icon"></i>
 		<div class="header" id="modalHeader">
-			Delete
+			Delete Word
 		</div>
 		<div class="content">
       <div class="description">
-        Do you want to delete <span id="deleteWordDes"></span>?
+        Do you want to delete <b><span id="deleteWordDes"></span></b>?
       </div>
     </div>
 		<div class="actions">
-			<div class="ui black right labeled icon button" id="cancelDeleteWord" onclick="cancelDelete()">
+			<div class="ui black right labeled icon button" id="cancelDeleteWord" onclick="cancelDeleteWord()">
 				No
 				<i class="minus circle icon"></i>
 			</div>
 			
-			<div class="ui green right labeled icon button" id="submitDeleteWord" onclick="submitDelete()">
+			<div class="ui green right labeled icon button" id="submitDeleteWord" onclick="submitDeleteWord()">
+				Yes
+				<i class="checkmark icon"></i>
+			</div>
+		</div>
+	</div>
+  
+  <div class="ui small modal" id="listDeleteModal">
+		<i class="close icon"></i>
+		<div class="header" id="modalHeader">
+			Delete List
+		</div>
+		<div class="content">
+      <div class="description">
+        Do you want to delete <b><span id="deleteListDes"></span></b>?
+      </div>
+    </div>
+		<div class="actions">
+			<div class="ui black right labeled icon button" id="cancelDeleteList" onclick="cancelDeleteList()">
+				No
+				<i class="minus circle icon"></i>
+			</div>
+			
+			<div class="ui green right labeled icon button" id="submitDeleteList" onclick="submitDeleteList()">
 				Yes
 				<i class="checkmark icon"></i>
 			</div>
