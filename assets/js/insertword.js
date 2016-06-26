@@ -47,13 +47,13 @@ function getWordLists(firstL, lastL) {
   $.get("API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
     var res = jQuery.parseJSON(data);
 		listList = res.results;
-    setListDropDown(listList);
+    setListDropDown();
     
     populateWords(wordsPerPage, currentPage);
   });
 }
 
-function setListDropDown(l) {
+function setListDropDown() {
   $('#wordLists').html("");
     
     var listExists = false;
@@ -63,13 +63,14 @@ function setListDropDown(l) {
       selectedList = parseInt(localStorage.selectedList);
     }
     
-    for (var i = 0; i < l.length; i++) {
+    for (var i = 0; i < listList.length; i++) {
+      listList[i].name = listList[i].name.split('\\').join('');
       $('#wordLists').
       append($("<option></option>").
-      attr("value", l[i].value).
-      text(l[i].name));
-      if (selectedList == l[i].value) {
-        selectedListName = l[i].name;
+      attr("value", listList[i].value).
+      text(listList[i].name));
+      if (selectedList == listList[i].value) {
+        selectedListName = listList[i].name;
         listExists = true;
       }
     }
@@ -108,7 +109,7 @@ function selectWordsList(){
   $('#listDeleteModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
   
   $("#insertList").click(function () {
-    var list = $("#listName").val().trim();
+    var list = $("#listName").val().trim().split('\\').join('');
     if (word.length == 0) {
       $("#listName").addClass("error");
     } else {

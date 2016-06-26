@@ -6,6 +6,7 @@ require_once ('login.php'); //lib/random/random.php is required in login.php
 require_once ('helper/verificationhelper.php');
 require_once ('helper/DBOperations.php');
 //require_once ('helper/Emailer.php');
+require_once ('helper/utils.php');
 
 function getUserFromToken($conn, $token) {
 	$uID = null;
@@ -258,34 +259,54 @@ function getPracticeList($conn, $userID, $lists, $n) {
 }
 
 function submitPractice($conn, $userID, $cr, $incr) {
-  $sql = "INSERT INTO UserWordStep (WordID, UserID) ".
-  "SELECT DISTINCT uws.WordID, ? ".
-  "FROM UserWordStep uws ".
-  "LEFT OUTER JOIN UserWordStep uwsOrg ON uws.WordID=uwsOrg.WordID AND uwsOrg.UserID=? ".
-  "WHERE (uws.WordID IN (". $cr .") OR uws.WordID IN (". $incr .")) AND uwsOrg.UserID IS NULL";
+  $cr = arrayTypeInt(forceArray($cr));
+  $incr = arrayTypeInt(forceArray($incr));
   
-  if (modifyRows($conn, $sql, "ii", $userID, $userID)) {
-    $sqlcr = "UPDATE UserWordStep SET Step=Step+1, LastCheckTime=CURRENT_TIMESTAMP WHERE UserID=? AND WordID IN (". $cr .")";
-    $sqlincr = "UPDATE UserWordStep SET Step=1, LastCheckTime=CURRENT_TIMESTAMP WHERE UserID=? AND WordID IN (". $incr .")";
+  $allcrin = array_merge($cr, $incr);
+  $wlmb = listMarksBinds($allcrin);
+  $sql = "INSERT INTO UserWordStep (WordID, UserID) 
+  SELECT DISTINCT w.ID,? FROM Words w 
+  WHERE w.ID IN (%AllWords%) AND w.ID NOT IN (
+      SELECT DISTINCT w.ID FROM Words w 
+      INNER JOIN UserWordStep uws ON uws.WordID=w.ID AND uws.UserID = ?
+      WHERE w.ID IN (%AllWords%) )";
+  
+  $sql = str_ireplace("%AllWords%", $wlmb["marks"], $sql);
+  
+  $binds = 'i' . $wlmb["binds"] . 'i' . $wlmb["binds"];
+  $args = array();
+  $args = array_merge(array($conn, $sql, $binds, $userID), $allcrin, array($userID), $allcrin);
+  if (call_user_func_array('modifyRows', $args)) {
+    $sqlcr = "UPDATE UserWordStep SET Step=Step+1, LastCheckTime=CURRENT_TIMESTAMP WHERE UserID=? AND WordID IN (%Corrects%)";
+    $sqlincr = "UPDATE UserWordStep SET Step=1, LastCheckTime=CURRENT_TIMESTAMP WHERE UserID=? AND WordID IN (%InCorrects%)";
     $crres = false;
     $incrres = false;
-    
-    if (strlen($cr) > 0) {
-      if (modifyRows($conn, $sqlcr, "i", $userID)) {
+    if (count($cr) > 0) {
+      $crlmb = listMarksBinds ($cr);
+      $sqlcr = str_ireplace("%Corrects%", $crlmb["marks"], $sqlcr);
+      $binds = 'i' . $crlmb["binds"];
+      $args = array();
+      $args = array_merge(array($conn, $sqlcr, $binds, $userID), $cr);
+      if (call_user_func_array('modifyRows', $args)) {
         $crres = true;
       }
     } else {
       $crres = true;
     }
     
-    if (strlen($incr) > 0) {
-      if (modifyRows($conn, $sqlincr, "i", $userID)) {
+    if (count($incr) > 0) {
+      $incrlmb = listMarksBinds ($incr);
+      $sqlincr = str_ireplace("%InCorrects%", $incrlmb["marks"], $sqlincr);
+      $binds = 'i' . $incrlmb["binds"];
+      $args = array();
+      $args = array_merge(array($conn, $sqlincr, $binds, $userID), $incr);
+      if (call_user_func_array('modifyRows', $args)) {
         $incrres = true;
       }
     } else {
       $incrres = true;
     }
-    return ($crres and $incrres);
+    return ($crres && $incrres);
   }
 	return false;
 }
@@ -444,22 +465,8 @@ $response = "";
 if (isset($_GET["action"])) {
   $action = $_GET["action"];
 }
-
-foreach($_GET as $key => $value) {
-    if (is_array($value) || is_object($value)) {
-      $get .= "-" . $key . ":" . var_export($value);
-    } else {
-      $get .= "-" . $key . ":" . $value;
-    }
-}
-
-foreach($_POST as $key => $value) {
-    if (is_array($value) || is_object($value)) {
-      $post .= "-" . $key . ":" . var_export($value);
-    } else {
-      $post .= "-" . $key . ":" . $value;
-    }
-}
+$get = json_encode($_GET);
+$post = json_encode($_POST);
 
 $message = array();
 if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["username"]) && isset($_POST["password"])) {
@@ -536,7 +543,7 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 				}
 				break;
 			case "submitpractice":
-				if(isset($_POST["correct"]) && isset($_POST["incorrect"])) {
+				if(isset($_POST["correct"]) || isset($_POST["incorrect"])) {
 					$cr = $_POST["correct"];
 					$incr = $_POST["incorrect"];
 					$message["submit"] = submitPractice($conn, $userID, $cr, $incr);
@@ -580,7 +587,9 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 		$message["status"] = "Invalid token";
 	}
 }
-$response =  json_encode($message);
+
+$response = json_encode($message);
+
 echo $response;
 eventLog($conn, $action, $get, $post, $response);
 

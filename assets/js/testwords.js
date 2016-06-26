@@ -6,10 +6,6 @@ var wordDescriptionDiv = '<i class="file text outline icon"></i>';
 var firstL = 0;
 var lastL = 50;
 
-$(document).ready(function() {
-  $("#increaseWordNumber").css("z-index", 2);
-});
-
 if (localStorage.hasOwnProperty("practicelist") && localStorage.hasOwnProperty("practicelistInventory")) {
 	practiceList = jQuery.parseJSON(localStorage.practicelist);
 	$('#unfinishedPractice').css('display', 'block');
@@ -43,20 +39,20 @@ function checkWordNumber() {
 $(document).ready(function() {
   
 
-$.get("API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
-  var res = jQuery.parseJSON(data);
-  listList = res.results;
-  for (var i = 0; i < listList.length; i++) {
-    $('#listItems').append($("<div></div>").
-      attr("data-value", listList[i].value).
-      text(listList[i].name).addClass("item"));
-  }
-  $('#listSelection').dropdown();
-  $('#clearListSelection') .on('click', function() {
-    $('#listSelection').dropdown('restore defaults');
+  $.get("API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
+    var res = jQuery.parseJSON(data);
+    listList = res.results;
+    for (var i = 0; i < listList.length; i++) {
+      $('#listItems').append($("<div></div>").
+        attr("data-value", listList[i].value).
+        text(listList[i].name.split('\\').join('')).addClass("item"));
+    }
+    $('#listSelection').dropdown();
+    $('#clearListSelection') .on('click', function() {
+      $('#listSelection').dropdown('restore defaults');
+    });
+    
   });
-  
-});
 
 	$('.ui.small.modal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
 	$("#start").click(function(){
@@ -125,7 +121,7 @@ function markPracticeListWord(res) {
 
 function checkWord() {
 	$('#wordTranslation').css('visibility', 'visible');
-	if ($('#wordDescription').html.length > '<i class="file text outline icon"></i>'.length ) $('#wordDescription').css('visibility', 'visible');
+	if ($('#wordDescription').html().length > '<i class="file text outline icon"></i>'.length ) $('#wordDescription').css('visibility', 'visible');
 }
 
 function getCurrentWordInfo() {
@@ -148,9 +144,9 @@ function showWordModal(n) {
 	var w = getWordInfo(n);
 	$('#modalHeader').html('<i class="book icon"></i> ' + (n+1) + ' <i class="checkered flag icon"></i> ' + w.Step);
 	//$('#modalHeader').transition('pulse');
-	$('#wordMain').html('<i class="book icon"></i>' + w.Word);
-	$('#wordTranslation').html('<i class="translate icon"></i>' + w.Translation).css('visibility', 'hidden');
-	$('#wordDescription').html('<i class="file text outline icon"></i>' + w.Description).css('visibility', 'hidden');
+	$('#wordMain').html('<i class="book icon"></i>' + w.Word.split('\\').join(''));
+	$('#wordTranslation').html('<i class="translate icon"></i>' + w.Translation.split('\\').join('')).css('visibility', 'hidden');
+	$('#wordDescription').html('<i class="file text outline icon"></i>' + w.Description.split('\\').join('')).css('visibility', 'hidden');
 	if (! $('.ui.small.modal').modal('is active')) $('.ui.small.modal').modal('show');
 	$('#unfinishedPractice').css('display', 'block');
 }
@@ -172,18 +168,18 @@ function finishPractice() {
 function submitPracticeResult() {
 	var pr = jQuery.parseJSON(localStorage.practicelistInventory);
 	var w = jQuery.parseJSON(localStorage.practicelist);
-	var cr = "";
-	var incr = "";
+	var cr = [];
+	var incr = [];
 	
 	for (var i = 0; i < pr.inventory.length; i++) {
+    
 		if (pr.inventory[i] == 1) {
-			cr += "," + w[i].ID;
+			cr.push(w[i].ID);
 		} else {
-			incr += "," + w[i].ID;
+			incr.push(w[i].ID);
 		}
 	}
-	if (cr.length > 0) cr = cr.substring(1, cr.length);
-	if (incr.length > 0) incr = incr.substring(1, incr.length);
+	
 	$('#submitPractice').addClass('loading');
 	$.post("API.php?token=" + token + "&action=submitpractice", {correct:cr, incorrect:incr},function (data) {
 		$('#submitPractice').removeClass('loading');
