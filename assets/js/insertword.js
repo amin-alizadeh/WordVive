@@ -43,7 +43,7 @@ $(document).ready(function() {
 
 function getWordLists(firstL, lastL) {
   //$('#wordLists').dropdown();
-  //$('#wordLists').dropdown('clear');
+  $('#wordLists').dropdown('clear');
   $.get("API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
     var res = jQuery.parseJSON(data);
 		listList = res.results;
@@ -58,6 +58,7 @@ function setListDropDown(l) {
     
     var listExists = false;
     var selectedList = -1;
+    var selectedListName = "";
     if (localStorage.hasOwnProperty("selectedList")) {
       selectedList = parseInt(localStorage.selectedList);
     }
@@ -68,14 +69,22 @@ function setListDropDown(l) {
       attr("value", l[i].value).
       text(l[i].name));
       if (selectedList == l[i].value) {
+        selectedListName = l[i].name;
         listExists = true;
       }
     }
     
+    
     if (listExists) {
-      $('#wordLists').val(selectedList);
+      $('#wordLists').dropdown('set value', selectedList);
+      $('#wordLists').dropdown('set text', selectedListName);
+      $('#wordLists').dropdown('set selected', selectedList);
+    } else if (l.length > 0) {
+      $('#wordLists').dropdown('set value', l[0].value);
+      $('#wordLists').dropdown('set text', l[0].name);
+      $('#wordLists').dropdown('set selected', l[0].value);
     }
-    $('#wordLists').dropdown();
+    
     
 }
 
@@ -96,6 +105,7 @@ function selectWordsList(){
 	$('#wordEditModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
 	$('#wordDeleteModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
 	$('#shareListModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
+  $('#listDeleteModal').modal({closable:true}).modal('setting', 'transition', 'horizontal flip');
   
   $("#insertList").click(function () {
     var list = $("#listName").val().trim();
@@ -115,6 +125,8 @@ function selectWordsList(){
       });
     }
   });
+
+
   
   $("#shareList").click(function () {
     $('#shareListMessage').addClass('hidden');
@@ -122,6 +134,13 @@ function selectWordsList(){
     $('#shareUser').val('');
     $('#shareListModal').modal('show');
   });
+
+  $("#deleteList").click(function () {
+    if (! $('#listDeleteModal').modal('is active')) $('#listDeleteModal').modal('show');
+    $('#deleteListDes').html($('#wordLists option:selected').text());
+    
+  });
+
   
   $("#renameList").click(function () {
     $('#renameListMessage').addClass('hidden');
@@ -371,7 +390,7 @@ function submitInsertNewWord() {
 	});
 }
 
-function submitDelete() {
+function submitDeleteWord() {
 	$("#submitDeleteWord").addClass("loading");
 	$("#cancelDeleteWord").addClass("loading");
 	$.post("API.php?token=" + token + "&action=deleteword", {id:wordsList[wordDeleteID].ID}, function (data) {
@@ -385,12 +404,34 @@ function submitDelete() {
 	});
 }
 
+function submitDeleteList() {
+	$("#submitDeleteList").addClass("loading");
+	$("#cancelDeleteList").addClass("loading");
+	$.post("API.php?token=" + token + "&action=deletelist", {id:parseInt($('#wordLists').val())}, function (data) {
+		$("#submitDeleteList").removeClass("loading");
+		$("#cancelDeleteList").removeClass("loading");
+		$('#listDeleteModal').modal('hide');
+		var res = jQuery.parseJSON(data);
+		if (res.status == "OK") {
+      showToast('Delete List','List Successfully Deleted', 'success', 0);
+      getWordLists(firstL, lastL);
+		} else {
+      showToast('Delete List','List was not deleted', 'error', 0);
+    }
+    
+	});
+}
+
 function cancelEdit() {
   if ($('#wordEditModal').modal('is active')) $('#wordEditModal').modal('hide');
 }
 
-function cancelDelete() {
+function cancelDeleteWord() {
   if ($('#wordDeleteModal').modal('is active')) $('#wordDeleteModal').modal('hide');
+}
+
+function cancelDeleteList() {
+  if ($('#listDeleteModal').modal('is active')) $('#listDeleteModal').modal('hide');
 }
 
 function cancelRenameList() {
