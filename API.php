@@ -427,9 +427,40 @@ function shareListUser($conn, $userID, $user, $listID){
   return $message;
 }
 
+function eventLog ($conn, $action, $get, $post, $response) {
+  $sql = "INSERT INTO `EventLogs`(`Action`, `Get`, `Post`, `Response`) VALUES (?,?,?,?)";
+  modifyRows($conn, $sql, "ssss", $action, $get, $post, $response);
+}
+
 /*
 Main body starts here
 */
+
+$action = "";
+$get = "";
+$post = "";
+$response = "";
+
+if (isset($_GET["action"])) {
+  $action = $_GET["action"];
+}
+
+foreach($_GET as $key => $value) {
+    if (is_array($value) || is_object($value)) {
+      $get .= "-" . $key . ":" . var_export($value);
+    } else {
+      $get .= "-" . $key . ":" . $value;
+    }
+}
+
+foreach($_POST as $key => $value) {
+    if (is_array($value) || is_object($value)) {
+      $post .= "-" . $key . ":" . var_export($value);
+    } else {
+      $post .= "-" . $key . ":" . $value;
+    }
+}
+
 $message = array();
 if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["username"]) && isset($_POST["password"])) {
 	$message = checkLogin ($conn, $_POST["username"], $_POST["password"], $passwordSalt);
@@ -549,6 +580,9 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
 		$message["status"] = "Invalid token";
 	}
 }
-echo json_encode($message);
+$response =  json_encode($message);
+echo $response;
+eventLog($conn, $action, $get, $post, $response);
+
 mysqli_close($conn);
 ?>
