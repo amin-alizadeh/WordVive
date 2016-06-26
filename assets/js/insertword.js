@@ -150,10 +150,10 @@ function selectWordsList(){
   });
   
 	$("#insert").click(function () {
-		var word = $("#word").val().trim();
-    var wordBase = word.toLowerCase().split(' ').join('').split('+').join('').split('/').join('');
-		var translation = $("#translation").val().trim();
-		var description = $("#description").val().trim();
+		var word = $("#word").val().trim().split('\\').join('');
+    var wordBase = word.toLowerCase().split(' ').join('').split('+').join('').split('/').join('').split('\\').join('');
+		var translation = $("#translation").val().trim().split('\\').join('');
+		var description = $("#description").val().trim().split('\\').join('');
 		if (word.length == 0 && translation.length == 0) {
 			$("#wordfield").addClass("error");
 			$("#translationfield").addClass("error");
@@ -272,9 +272,9 @@ function jumpToPage(n) {
             var d = r.insertCell(2);
             var s = r.insertCell(3);
             var ss = r.insertCell(4);
-            w.innerHTML = word.Word;
-            t.innerHTML = word.Translation;
-            d.innerHTML = word.Description;
+            w.innerHTML = word.Word.split('\\').join('');
+            t.innerHTML = word.Translation.split('\\').join('');
+            d.innerHTML = word.Description.split('\\').join('');
             s.innerHTML = word.Step;
             ss.innerHTML = wordSettings.replace("%n%", i).replace("%n%", i);
             ss.className = "right aligned";
@@ -339,12 +339,12 @@ function submitEdit() {
 	$("#modalDescription").addClass("loading");
 	$("#submitEditWord").addClass("loading");
 	$("#cancelEditWord").addClass("loading");
-  var word = $('#editword').val().trim();
+  var word = $('#editword').val().trim().split('\\').join('');
   var wordBase = word.toLowerCase().split(' ').join('').split('+').join('').split('/').join('');
 	$.post("API.php?token=" + token + "&action=updateword", 
   {word:word, id:wordEditID, 
-	translation:$('#edittranslation').val().trim(), 
-  description:$('#editdescription').val().trim(), wordbase:wordBase}, 
+	translation:$('#edittranslation').val().trim().split('\\').join(''), 
+  description:$('#editdescription').val().trim().split('\\').join(''), wordbase:wordBase}, 
   function (data) {
 		$("#modalDescription").removeClass("loading");
 		$("#submitEditWord").removeClass("loading");
