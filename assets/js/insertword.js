@@ -80,10 +80,10 @@ function setListDropDown() {
       $('#wordLists').dropdown('set value', selectedList);
       $('#wordLists').dropdown('set text', selectedListName);
       $('#wordLists').dropdown('set selected', selectedList);
-    } else if (l.length > 0) {
-      $('#wordLists').dropdown('set value', l[0].value);
-      $('#wordLists').dropdown('set text', l[0].name);
-      $('#wordLists').dropdown('set selected', l[0].value);
+    } else if (listList.length > 0) {
+      $('#wordLists').dropdown('set value', listList[0].value);
+      $('#wordLists').dropdown('set text', listList[0].name);
+      $('#wordLists').dropdown('set selected', listList[0].value);
     }
     
     
