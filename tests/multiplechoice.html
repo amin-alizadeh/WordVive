@@ -8,12 +8,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
     <!-- Site Properities -->
-    <title>WordVive - Practice Words</title>
-  <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
-	<link rel="stylesheet" type="text/css" href="dist/semantic.css">
+    <title>WordVive - Multiple Choice</title>
+  <link rel='shortcut icon' type='image/x-icon' href='../favicon.ico' />
+	<link rel="stylesheet" type="text/css" href="../dist/semantic.css">
 	
-	<script src="assets/library/jquery.min.js"></script>
-	<script src="dist/semantic.js"></script>
+	<script src="../assets/library/jquery.min.js"></script>
+	<script src="../dist/semantic.js"></script>
 	
     <style type="text/css">
         body {
@@ -60,7 +60,7 @@
           </div>
           <div class="ui pointing blue label">Pick lists</div>
 				</div>
-        <div class="two left aligned wide column">
+        <div class="two right aligned wide column">
 					<button class="ui teal button" id="clearListSelection">Clear</button>
 				</div>
       </div>  
@@ -75,9 +75,19 @@
 						<div class="ui pointing blue label">Words to practice</div>
 					</div>
 				</div>
-        <div class="four wide column">
+        <div class="four center aligned wide column">
+          <div class="field">
+            <div class="ui pointing blue label">Choices</div>
+            <select class="ui dropdown" id="wordLists">
+              <option value=2>2</option>
+              <option value=2>3</option>
+              <option value=2>4</option>
+              <option value=2>5</option>
+            </select>
+          </div>
+					
         </div>
-        <div class="eight left aligned wide column">
+        <div class="six left aligned wide column">
 					<button class="ui teal submit button" id="start">Start</button>
 				</div>
 			</div>
@@ -181,7 +191,7 @@
         </div>
       </div> -->
             <div class="ui inverted section divider"></div>
-            <img src="assets/images/logo.png" class="ui centered mini image">
+            <img src="../assets/images/logo.png" class="ui centered mini image">
             <div class="ui horizontal inverted small divided link list">
                 <a class="item" href="#">Contact Us</a>
                 <a class="item" href="#">About</a>
@@ -189,7 +199,7 @@
         </div>
     </div>
 </body>
-<script src="assets/js/utils.js"></script>
-<script src="assets/js/menu.js"></script>
-<script src="assets/js/testwords.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/menu.js"></script>
+<script src="../assets/js/multipleChoice.js"></script>
 </html>
