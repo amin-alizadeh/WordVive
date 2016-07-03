@@ -604,9 +604,9 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
           }
         }
 				if (isset($_GET["count"])) {
-					$message["practicelist"] = getPracticeList($conn, $userID, $lists, $_GET["count"]);
+					$message["list"] = getPracticeList($conn, $userID, $lists, $_GET["count"]);
 				} else {
-					$message["practicelist"] = getPracticeList($conn, $userID, $lists, 10);
+					$message["list"] = getPracticeList($conn, $userID, $lists, 10);
 				}
 				break;
 			case "multiplechoicepracticelist":

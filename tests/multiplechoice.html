@@ -65,32 +65,38 @@
 				</div>
       </div>  
 			<div class="three column row">
-				<div class="four wide column">
-					<div class="field">
+				<div class="six wide column">
+					<div class="inline field">
+            <div class="ui pointing below blue label">Words to practice</div>
 						<div id="wordfield" class="ui right labeled input">
 							<a class="ui label" onclick="decreaseWordNumber()">-</a>
 							<input id="wordnumber" onchange="checkWordNumber()" type="number" style="text-align:center;" placeholder="Amount" value="20">
 							<a class="ui label" style="z-index: 5" onclick="increaseWordNumber()">+</a>
 						</div>
-						<div class="ui pointing blue label">Words to practice</div>
 					</div>
 				</div>
         <div class="four center aligned wide column">
-          <div class="field">
-            <div class="ui pointing blue label">Choices</div>
-            <select class="ui dropdown" id="wordLists">
+          
+        </div>
+        <div class="six left aligned wide column">
+				</div>
+			</div>
+      <div class="three column row">
+        <div class="six left aligned wide column">
+          <div class="inline field">
+            <div class="ui right pointing blue label">Choices</div>
+            <select class="ui dropdown" id="multiChoices" >
               <option value=2>2</option>
-              <option value=2>3</option>
-              <option value=2>4</option>
-              <option value=2>5</option>
+              <option value=3 selected="selected">3</option>
+              <option value=4>4</option>
+              <option value=5>5</option>
             </select>
           </div>
-					
         </div>
         <div class="six left aligned wide column">
 					<button class="ui teal submit button" id="start">Start</button>
 				</div>
-			</div>
+      </div>
 			<div class="two column row" id="unfinishedPractice" style="display:block">
 				<div class="six wide column">
 					You have an unfinished practice. Would you like to continue?
@@ -125,7 +131,7 @@
 		
     </div>
 	
-<div class="ui small modal">
+<div class="ui small modal" id="multipleChoiceModal">
 	<i class="close icon"></i>
 	<div class="header" id="modalHeader">
 		
@@ -134,23 +140,22 @@
 		<div class="description">
 		
 			<div class="ui header" id="wordMain"></div>
-			<p id="wordTranslation"></p>
-			<p id="wordDescription"></p>
+			<p id="multipleChoices">
+        <button class="ui black basic button" id="b1">Black</button>
+        <button class="ui green basic button" id="b2">Black</button>
+      </p>
+			
 		</div>
 		
 	</div>
 	<div class="actions">
-		<div class="ui black right labeled icon button" onclick="incorrectWord()">
-			I don't know
-			<i class="minus circle icon"></i>
-		</div>
 		<div class="ui blue right labeled icon button" onclick="checkWord()">
 			Check
 			<i class="unhide icon"></i>
 		</div>
-		<div class="ui green right labeled icon button" onclick="correctWord()">
-			I know
-			<i class="checkmark icon"></i>
+		<div class="ui green right labeled icon button" onclick="nextWord()">
+			Next
+			<i class="arrow right icon"></i>
 		</div>
 	</div>
 </div>	

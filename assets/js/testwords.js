@@ -6,7 +6,7 @@ var wordDescriptionDiv = '<i class="file text outline icon"></i>';
 var firstL = 0;
 var lastL = 50;
 
-if (localStorage.hasOwnProperty("practicelist") && localStorage.hasOwnProperty("practicelistInventory")) {
+if (localStorage.hasOwnProperty("practicelist") && localStorage.hasOwnProperty("practicelistInventory") && localStorage.practicelist && localStorage.practicelistInventory) {
 	practiceList = jQuery.parseJSON(localStorage.practicelist);
 	$('#unfinishedPractice').css('display', 'block');
 } else {
@@ -70,7 +70,7 @@ $(document).ready(function() {
 			*/
 			var inventoryObj = {};
 			inventoryObj["wordIndex"] = 0;
-			practiceList = jQuery.parseJSON(data).practicelist;
+			practiceList = jQuery.parseJSON(data).list;
 			localStorage.setItem("practicelist", JSON.stringify(practiceList));
 			inventoryObj["inventory"] = [];
 			for (var i = 0; i < practiceList.length; i++) {
