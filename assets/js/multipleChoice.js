@@ -5,6 +5,7 @@ var wordTranslationDiv = '<i class="translate icon"></i>';
 var wordDescriptionDiv = '<i class="file text outline icon"></i>';
 var firstL = 0;
 var lastL = 50;
+var answerChosen = false;
 
 if (localStorage.hasOwnProperty("multipleChoiceList") && localStorage.hasOwnProperty("multipleChoiceInventory")) {
 	multipleChoiceList = jQuery.parseJSON(localStorage.multipleChoiceList);
@@ -38,7 +39,6 @@ function checkWordNumber() {
 
 $(document).ready(function() {
   
-
   $.get("/API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
     var res = jQuery.parseJSON(data);
     listList = res.results;
@@ -62,22 +62,27 @@ $(document).ready(function() {
     $.post("/API.php?token=" + token + "&action=multiplechoicepracticelist&count=" + $('#wordnumber').val() + "&choices="+ $('#multiChoices').val(), {lists:lists}, function (data) {
 			$("#start").removeClass("loading");
       
-      
 			var inventory = "";
 			/*
 			wordIndex = the index of the last word checked from multipleChoiceList
-			inventory = [
-				0, 1,...
+			inventory = [ {ID: 123, correct: true}, {ID: 123, correct: true}
 			] --> keeping the track of which ones were answered correctly or not.
 			*/
 			var inventoryObj = {};
 			inventoryObj["wordIndex"] = 0;
 			multipleChoiceList = jQuery.parseJSON(data).list;
 			localStorage.setItem("multipleChoiceList", JSON.stringify(multipleChoiceList));
-			inventoryObj["inventory"] = [];
+			
+      var invObj = {};
 			for (var i = 0; i < multipleChoiceList.length; i++) {
-				inventoryObj["inventory"][i] = 0;
+        //var inv = {};
+        //inv[multipleChoiceList[i].ID.toString()] = false;//multipleChoiceList[i].ID;
+        //inv["correct"] = false;
+				//(inventoryObj["inventory"]).push(multipleChoiceList[i].ID.toString());
+        //inventoryObj["inventory"][multipleChoiceList[i].ID.toString()] = false;
+        invObj[multipleChoiceList[i].ID.toString()] = false;
 			}
+      inventoryObj["inventory"] = invObj;
 			inventory = JSON.stringify(inventoryObj);
 			localStorage.setItem("multipleChoiceInventory", inventory);
 			
@@ -94,26 +99,26 @@ function checkWord() {
 }
 
 function nextWord() {
-	if(markPracticeListWord(1)) {
-		var ind = getCurrentWordIndex();
-		showWordModal(ind);	
-	} else {
-		$('#multipleChoiceModal').modal('hide');
-		finishPractice();
-	}
+  if (localStorage.hasOwnProperty("multipleChoiceList") && localStorage.hasOwnProperty("multipleChoiceInventory")) {
+    var pr = jQuery.parseJSON(localStorage.multipleChoiceInventory);
+    if (pr.wordIndex < (Object.keys(pr.inventory).length)) {
+      showWordModal(pr.wordIndex);	
+    } else {
+      $('#multipleChoiceModal').modal('hide');
+      finishPractice();
+    }
+  }
 }
 
-function markPracticeListWord(res) {
-	var pr = jQuery.parseJSON(localStorage.multipleChoiceInventory);
-	pr.inventory[pr.wordIndex] = res;
-	if (pr.wordIndex < (pr.inventory.length - 1)) {
-		pr.wordIndex++;
-		localStorage.multipleChoiceInventory = JSON.stringify(pr);
-		return true;
-	} else {
-		localStorage.multipleChoiceInventory = JSON.stringify(pr);
-		return false;
-	}
+function markPracticeListWord(wID, res) {
+  if (localStorage.hasOwnProperty("multipleChoiceList") && localStorage.hasOwnProperty("multipleChoiceInventory")) {
+    var pr = jQuery.parseJSON(localStorage.multipleChoiceInventory);
+    pr.inventory[wID] = res;
+    if (pr.wordIndex < (Object.keys(pr.inventory).length)) {
+      pr.wordIndex++;
+    } 
+    localStorage.multipleChoiceInventory = JSON.stringify(pr);
+  }
 }
 
 
@@ -135,13 +140,24 @@ function getCurrentWordIndex() {
 
 function showWordModal(n) {
 	var w = getWordInfo(n);
-  console.log(w);
+  var answers = w.Answers;
+  var question = w.Question;
+  var step = w.Step;
+  var wID = w.ID;
+  var correct = w.Correct;
+  var listID = w.ListID;
+    
+  $('#wordMain').html('<i class="book icon"></i>' + question.split('\\').join(''));
+  var answerChoices = '';
+  for (var i = 0; i < answers.length; i++) {    
+    var entry = answers[i].split('\\').join('');
+    answerChoices += '<button class="ui black basic fluid button" style="text-align:left;" onclick="answerClicked(' + wID+','+correct+','+i+')" id="answerButton' + i + '">' 
+    + entry + '</button><p/>'
+  }
+  $('#multipleChoices').html(answerChoices);
+  if (! $('#multipleChoiceModal').modal('is active')) $('#multipleChoiceModal').modal('show');
 	$('#modalHeader').html('<i class="book icon"></i> ' + (n+1) + ' <i class="checkered flag icon"></i> ' + w.Step);
-	//$('#modalHeader').transition('pulse');
-	$('#wordMain').html('<i class="book icon"></i>' + w.Word.split('\\').join(''));
-	$('#wordTranslation').html('<i class="translate icon"></i>' + w.Translation.split('\\').join('')).css('visibility', 'hidden');
-	$('#wordDescription').html('<i class="file text outline icon"></i>' + w.Description.split('\\').join('')).css('visibility', 'hidden');
-	if (! $('#multipleChoiceModal').modal('is active')) $('#multipleChoiceModal').modal('show');
+	answerChosen = false;
 	$('#unfinishedPractice').css('display', 'block');
 }
 
@@ -150,30 +166,37 @@ function finishPractice() {
 	$('#startPractice').css('display', 'none');
 	$('#practiceResult').css('display', 'block');
 	var pr = jQuery.parseJSON(localStorage.multipleChoiceInventory);
-	var score = 0;
-	for (var i = 0; i < pr.inventory.length; i++) {
-		score += pr.inventory[i];
-	}
-	$('#correctInventory').html(score);
-	$('#incorrectInventory').html((pr.inventory.length - score));
+  pr = pr.inventory;
+	var correct = 0;
+  var incorrect = 0;
+	for (var property in pr) {
+    if (pr.hasOwnProperty(property)) {
+        if (pr[property]) {
+          correct++;
+        } else {
+          incorrect++;
+        }
+    }
+  }
+	$('#correctInventory').html(correct);
+	$('#incorrectInventory').html(incorrect);
 	
 }
 
 function submitPracticeResult() {
-	var pr = jQuery.parseJSON(localStorage.multipleChoiceInventory);
-	var w = jQuery.parseJSON(localStorage.multipleChoiceList);
+	var pr = jQuery.parseJSON(localStorage.multipleChoiceInventory).inventory;
 	var cr = [];
 	var incr = [];
-	
-	for (var i = 0; i < pr.inventory.length; i++) {
-    
-		if (pr.inventory[i] == 1) {
-			cr.push(w[i].ID);
-		} else {
-			incr.push(w[i].ID);
-		}
-	}
-	
+	for (var property in pr) {
+    if (pr.hasOwnProperty(property)) {
+        if (pr[property]) {
+          cr.push(parseInt(property));
+        } else {
+          incr.push(parseInt(property));
+        }
+    }
+  }
+	console.log(cr, incr);
 	$('#submitPractice').addClass('loading');
 	$.post("/API.php?token=" + token + "&action=submitpractice", {correct:cr, incorrect:incr},function (data) {
 		$('#submitPractice').removeClass('loading');
@@ -192,4 +215,19 @@ function submitPracticeResult() {
 
 function continuePractice() {
 	showWordModal (getCurrentWordIndex());
+}
+
+
+function answerClicked(wID, correct, clicked) {
+  console.log(wID, correct, clicked);
+  if (!answerChosen) {
+    answerChosen = true;
+    markPracticeListWord(wID, (correct == clicked));
+    if (correct == clicked) {
+      $('#answerButton' + correct).attr("class", "ui green fluid button");
+    } else {
+      $('#answerButton' + correct).attr("class", "ui green fluid button");
+      $('#answerButton' + clicked).attr("class", "ui red fluid button");
+    }
+  }
 }
