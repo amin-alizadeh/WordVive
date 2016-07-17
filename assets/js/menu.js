@@ -5,8 +5,16 @@ if (localStorage.hasOwnProperty("token")) {
 	window.location = "login.html";
 }
 
-var menu = '<a href="insertword.html" class="item"><i class="home icon"></i>Home</a>' +
-			'<a href="tests/testwords.html" class="item"><i class="student icon"></i>Test</a>' +
+var menu = '<a href="/insertword.html" class="item"><i class="home icon"></i>Home</a>' +
+      '<div class="ui inverted compact menu">'+
+        '<div class="ui simple dropdown item">Tests'+
+          '<i class="dropdown icon"></i>'+
+          '<div class="menu">'+
+            '<a href="/tests/testwords.html" class="item"><i class="check square icon"></i>Yes/No</a>' +
+            '<a href="/tests/multiplechoice.html" class="item"><i class="list icon"></i>Multiple Choice</a>' +
+          '</div>'+
+       '</div>'+
+      '</div>'+
 			'<div class="right menu">' +
 				'<a class="ui simple dropdown item">' +
 					'<div id="username">Hello User!</div> <i class="dropdown icon"></i>' +
