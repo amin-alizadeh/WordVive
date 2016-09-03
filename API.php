@@ -215,17 +215,84 @@ function logUserOut($conn, $token) {
 	}
 }
 
-function getPracticeList($conn, $userID, $lists, $n) {
-  if (! is_array($lists)) {
-    $list = $lists;
+function getMultipleChoicePracticeList($conn, $userID, $lists, $n, $choices = 3){
+  $lists = arrayTypeInt(forceArray($lists));
+  $lmb = listMarksBinds($lists);
+  if ($choices < 2) {
+    $choices = 2;
+  }
+  
+  $sql = "SELECT w.ID, w.Word, w.Translation, w.Description, ul.ListID
+    ,CASE WHEN uws.Step IS NULL THEN 1 ELSE uws.Step END AS Step
+    FROM UserList ul INNER JOIN Words w ON 
+    (ul.UserID=? AND w.ListID=ul.ListID %ListCriteria%)
+    LEFT OUTER JOIN UserWordStep AS uws ON 
+    (uws.Step<uws.GoalStep AND uws.WordID=w.ID AND uws.UserID=ul.UserID) 
+    ORDER BY RAND() LIMIT 0,?";
+
+  $listCriteria = "";
+  $binds = 'ii';
+  if (count($lists) > 1 || (count($lists) == 1) && $lists[0] != -1) {
+    $listCriteria = str_ireplace("%lists%", $lmb["marks"], " AND ul.ListID IN (%lists%) ");
+    $binds = 'i' . $lmb["binds"] . 'i';
+  } else {
     $lists = array();
-    $lists[0] = $list;
+  }
+  $sql = str_ireplace("%ListCriteria%", $listCriteria, $sql);
+
+  $args = array($conn, $sql, $binds, $userID);
+  
+  foreach ($lists as $l) {
+    array_push($args, intval($l));
   }
 
-  $listMarks = array();
-  for ($i = 0; $i < count($lists); $i++) {
-    array_push($listMarks, "?");
+  array_push($args, $n*$choices);
+  $rows = call_user_func_array('fetchRows', $args);
+
+  $multiple_choice = array();
+  /*
+  ID
+  Question
+  Answers: [Answer1, Answer2, ...]
+  Correct
+  ListID
+  Step
+  */
+  $questions = range(0, (count($rows) / $choices)-1);
+  shuffle($questions);
+  for ($i = 0; $i < count($questions); $i++) {
+    $qItem = array();
+    $q = $rows[$questions[$i]];
+    $correct = mt_rand(0, $choices - 1);
+    $qItem["ID"] = $q["ID"];
+    $qItem["Question"] = $q["Word"];
+    $answers = array();
+    for ($j = 0; $j < $choices; $j++) {
+      if ($j == $correct) {
+        array_push ($answers, $q["Translation"]);
+      } else {
+        $r = mt_rand(0, count($rows) - 1);
+        while($r == $questions[$i]){
+          $r = mt_rand(0, count($rows) - 1);
+        }
+        $chosenItem = $rows[$r]["Translation"];
+        array_push ($answers, $chosenItem);
+      }
+    }
+    $qItem["Answers"] = $answers;
+    $qItem["ListID"] = $q["ListID"];
+    $qItem["Step"] = $q["Step"];
+    $qItem["Correct"] = $correct;
+    
+    array_push($multiple_choice, $qItem);
   }
+
+  return $multiple_choice;
+}
+
+function getPracticeList($conn, $userID, $lists, $n) {
+  $lists = arrayTypeInt(forceArray($lists));
+  $lmb = listMarksBinds($lists);
   
   $sql = "SELECT w.ID, w.Word, w.Translation, w.Description, ul.ListID
     ,CASE WHEN uws.Step IS NULL THEN 1 ELSE uws.Step END AS Step
@@ -238,8 +305,8 @@ function getPracticeList($conn, $userID, $lists, $n) {
   $listCriteria = "";
   $binds = 'ii';
   if (count($lists) > 1 || (count($lists) == 1) && $lists[0] != -1) {
-    $listCriteria = str_ireplace("%lists%", implode(",", $listMarks), " AND ul.ListID IN (%lists%) ");
-    $binds = 'i' . str_repeat("i", count($lists)) . 'i';
+    $listCriteria = str_ireplace("%lists%", $lmb["marks"], " AND ul.ListID IN (%lists%) ");
+    $binds = 'i' . $lmb["binds"] . 'i';
   } else {
     $lists = array();
   }
@@ -537,10 +604,29 @@ if (isset($_GET["action"]) && $_GET["action"] == "login" && isset($_POST["userna
           }
         }
 				if (isset($_GET["count"])) {
-					$message["practicelist"] = getPracticeList($conn, $userID, $lists, $_GET["count"]);
+					$message["list"] = getPracticeList($conn, $userID, $lists, $_GET["count"]);
 				} else {
-					$message["practicelist"] = getPracticeList($conn, $userID, $lists, 10);
+					$message["list"] = getPracticeList($conn, $userID, $lists, 10);
 				}
+				break;
+			case "multiplechoicepracticelist":
+        
+        $lists = array(-1);
+        if(isset($_POST["lists"])) {
+          $lists = $_POST["lists"];
+          if (! is_array($lists)) {
+            $lists = array($lists);
+          }
+        }
+        $choices = 3;
+        if (isset($_GET["choices"])) {
+          $choices = $_GET["choices"];
+        }
+        $count = 10;
+				if (isset($_GET["count"])) {
+					$count = $_GET["count"];
+				} 
+        $message["list"] = getMultipleChoicePracticeList($conn, $userID, $lists, $count, $choices);
 				break;
 			case "submitpractice":
 				if(isset($_POST["correct"]) || isset($_POST["incorrect"])) {

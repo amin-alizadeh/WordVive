@@ -8,12 +8,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
     <!-- Site Properities -->
-    <title>WordVive - Practice Words</title>
-  <link rel='shortcut icon' type='image/x-icon' href='/favicon.ico' />
-	<link rel="stylesheet" type="text/css" href="dist/semantic.css">
+    <title>WordVive - Multiple Choice</title>
+  <link rel='shortcut icon' type='image/x-icon' href='../favicon.ico' />
+	<link rel="stylesheet" type="text/css" href="../dist/semantic.css">
 	
-	<script src="assets/library/jquery.min.js"></script>
-	<script src="dist/semantic.js"></script>
+	<script src="../assets/library/jquery.min.js"></script>
+	<script src="../dist/semantic.js"></script>
 	
     <style type="text/css">
         body {
@@ -60,27 +60,44 @@
           </div>
           <div class="ui pointing blue label">Pick lists</div>
 				</div>
-        <div class="two left aligned wide column">
+        <div class="two right aligned wide column">
 					<button class="ui teal button" id="clearListSelection">Clear</button>
+          <button class="ui teal button" id="restoreDefaultListSelection">Defaults</button>
 				</div>
       </div>  
 			<div class="three column row">
-				<div class="four wide column">
-					<div class="field">
+				<div class="six wide column">
+					<div class="inline field">
+            <div class="ui pointing below blue label">Words to practice</div>
 						<div id="wordfield" class="ui right labeled input">
 							<a class="ui label" onclick="decreaseWordNumber()">-</a>
 							<input id="wordnumber" onchange="checkWordNumber()" type="number" style="text-align:center;" placeholder="Amount" value="20">
 							<a class="ui label" style="z-index: 5" onclick="increaseWordNumber()">+</a>
 						</div>
-						<div class="ui pointing blue label">Words to practice</div>
 					</div>
 				</div>
-        <div class="four wide column">
+        <div class="four center aligned wide column">
+          
         </div>
-        <div class="eight left aligned wide column">
-					<button class="ui teal submit button" id="start">Start</button>
+        <div class="six left aligned wide column">
 				</div>
 			</div>
+      <div class="three column row">
+        <div class="six left aligned wide column">
+          <div class="inline field">
+            <div class="ui right pointing blue label">Choices</div>
+            <select class="ui dropdown" id="multiChoices" >
+              <option value=2>2</option>
+              <option value=3 selected="selected">3</option>
+              <option value=4>4</option>
+              <option value=5>5</option>
+            </select>
+          </div>
+        </div>
+        <div class="six left aligned wide column">
+					<button class="ui teal submit button" id="start">Start</button>
+				</div>
+      </div>
 			<div class="two column row" id="unfinishedPractice" style="display:block">
 				<div class="six wide column">
 					You have an unfinished practice. Would you like to continue?
@@ -115,7 +132,7 @@
 		
     </div>
 	
-<div class="ui small modal">
+<div class="ui small modal" id="multipleChoiceModal">
 	<i class="close icon"></i>
 	<div class="header" id="modalHeader">
 		
@@ -124,23 +141,16 @@
 		<div class="description">
 		
 			<div class="ui header" id="wordMain"></div>
-			<p id="wordTranslation"></p>
-			<p id="wordDescription"></p>
+			<div id="multipleChoices">
+      </div>
+			
 		</div>
 		
 	</div>
 	<div class="actions">
-		<div class="ui black right labeled icon button" onclick="incorrectWord()">
-			I don't know
-			<i class="minus circle icon"></i>
-		</div>
-		<div class="ui blue right labeled icon button" onclick="checkWord()">
-			Check
-			<i class="unhide icon"></i>
-		</div>
-		<div class="ui green right labeled icon button" onclick="correctWord()">
-			I know
-			<i class="checkmark icon"></i>
+		<div class="ui green right labeled icon button" onclick="nextWord()">
+			Next
+			<i class="arrow right icon"></i>
 		</div>
 	</div>
 </div>	
@@ -181,7 +191,7 @@
         </div>
       </div> -->
             <div class="ui inverted section divider"></div>
-            <img src="assets/images/logo.png" class="ui centered mini image">
+            <img src="../assets/images/logo.png" class="ui centered mini image">
             <div class="ui horizontal inverted small divided link list">
                 <a class="item" href="#">Contact Us</a>
                 <a class="item" href="#">About</a>
@@ -189,7 +199,7 @@
         </div>
     </div>
 </body>
-<script src="assets/js/utils.js"></script>
-<script src="assets/js/menu.js"></script>
-<script src="assets/js/testwords.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/menu.js"></script>
+<script src="../assets/js/multipleChoice.js"></script>
 </html>

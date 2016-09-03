@@ -6,7 +6,7 @@ var wordDescriptionDiv = '<i class="file text outline icon"></i>';
 var firstL = 0;
 var lastL = 50;
 
-if (localStorage.hasOwnProperty("practicelist") && localStorage.hasOwnProperty("practicelistInventory")) {
+if (localStorage.hasOwnProperty("practicelist") && localStorage.hasOwnProperty("practicelistInventory") && localStorage.practicelist && localStorage.practicelistInventory) {
 	practiceList = jQuery.parseJSON(localStorage.practicelist);
 	$('#unfinishedPractice').css('display', 'block');
 } else {
@@ -39,7 +39,7 @@ function checkWordNumber() {
 $(document).ready(function() {
   
 
-  $.get("API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
+  $.get("/API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
     var res = jQuery.parseJSON(data);
     listList = res.results;
     for (var i = 0; i < listList.length; i++) {
@@ -58,8 +58,8 @@ $(document).ready(function() {
 	$("#start").click(function(){
 		$("#start").addClass("loading");
     var lists = $('#lists').val().split(',');
-		//$.get("API.php?token=" + token + "&action=practicelist&count=" + $('#wordnumber').val(), function (data) {
-    $.post("API.php?token=" + token + "&action=practicelist&count=" + $('#wordnumber').val(), {lists:lists}, function (data) {
+		//$.get("/API.php?token=" + token + "&action=practicelist&count=" + $('#wordnumber').val(), function (data) {
+    $.post("/API.php?token=" + token + "&action=practicelist&count=" + $('#wordnumber').val(), {lists:lists}, function (data) {
 			$("#start").removeClass("loading");
 			var inventory = "";
 			/*
@@ -70,7 +70,7 @@ $(document).ready(function() {
 			*/
 			var inventoryObj = {};
 			inventoryObj["wordIndex"] = 0;
-			practiceList = jQuery.parseJSON(data).practicelist;
+			practiceList = jQuery.parseJSON(data).list;
 			localStorage.setItem("practicelist", JSON.stringify(practiceList));
 			inventoryObj["inventory"] = [];
 			for (var i = 0; i < practiceList.length; i++) {
@@ -181,7 +181,7 @@ function submitPracticeResult() {
 	}
 	
 	$('#submitPractice').addClass('loading');
-	$.post("API.php?token=" + token + "&action=submitpractice", {correct:cr, incorrect:incr},function (data) {
+	$.post("/API.php?token=" + token + "&action=submitpractice", {correct:cr, incorrect:incr},function (data) {
 		$('#submitPractice').removeClass('loading');
 		var res = jQuery.parseJSON(data);
 		if (res.submit) {
