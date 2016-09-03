@@ -38,19 +38,53 @@ function checkWordNumber() {
 }
 
 $(document).ready(function() {
+  let defaultCount = 20;
+  let defaultChoices = 3;
+  if (window.localStorage.multipleChoiceDefaultCount) {
+    defaultCount = parseInt(window.localStorage.multipleChoiceDefaultCount);
+  }
+  if (window.localStorage.multipleChoiceDefaultCount) {
+    defaultChoices = parseInt(window.localStorage.multipleChoiceDefaultChoices);
+  }
+  
+  if (defaultCount < 1 && defaultCount > 50) {
+    defaultCount = 20;
+  }
+  if (defaultChoices < 2 && defaultChoices > 5) {
+    defaultChoices = 3;
+  }
+  
+  $('#wordnumber').val(defaultCount);
+  $('#multiChoices').val(defaultChoices);
   
   $.get("/API.php?token=" + token + "&action=listlist&first=" + firstL + "&last=" + lastL, function (data) {
     var res = jQuery.parseJSON(data);
     listList = res.results;
+    let defaultList = ['-1'];
+    if (window.localStorage.multipleChoiceDefaultList) {
+      defaultList = [];
+      savedList = window.localStorage.multipleChoiceDefaultList.split(',');
+    }
+    
     for (var i = 0; i < listList.length; i++) {
+      if (window.localStorage.multipleChoiceDefaultList 
+        && $.inArray(listList[i].value.toString(), savedList) > -1) {
+        defaultList.push(listList[i].value);
+      }
       $('#listItems').append($("<div></div>").
         attr("data-value", listList[i].value).
         text(listList[i].name.split('\\').join('')).addClass("item"));
     }
+    $('#lists').val(defaultList.join(','));
     $('#listSelection').dropdown();
     $('#clearListSelection') .on('click', function() {
+      $('#listSelection').dropdown('clear');
+    });
+    
+    $('#restoreDefaultListSelection') .on('click', function() {
       $('#listSelection').dropdown('restore defaults');
     });
+    
     
   });
 
@@ -58,8 +92,18 @@ $(document).ready(function() {
 	$("#start").click(function(){
 		$("#start").addClass("loading");
     var lists = $('#lists').val().split(',');
+    if (!lists) {
+      lists[0] = -1;
+    }
+    let count = $('#wordnumber').val();
+    let choices = $('#multiChoices').val();
+    if (window.localStorage) {
+      window.localStorage.setItem('multipleChoiceDefaultCount', count);
+      window.localStorage.setItem('multipleChoiceDefaultList', lists);
+      window.localStorage.setItem('multipleChoiceDefaultChoices', choices);
+    }
 		//$.get("/API.php?token=" + token + "&action=multiplechoicepracticelist&count=" + $('#wordnumber').val(), function (data) {
-    $.post("/API.php?token=" + token + "&action=multiplechoicepracticelist&count=" + $('#wordnumber').val() + "&choices="+ $('#multiChoices').val(), {lists:lists}, function (data) {
+    $.post("/API.php?token=" + token + "&action=multiplechoicepracticelist&count=" + count + "&choices="+ choices, {lists:lists}, function (data) {
 			$("#start").removeClass("loading");
       
 			var inventory = "";
